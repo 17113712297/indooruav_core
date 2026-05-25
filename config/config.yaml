@@ -1,0 +1,33 @@
+indooruav_core:
+
+  # 状态机的ros server会开启这些service，来接收这些事件并调用回调函数
+  # 注意这些service全部为 #include <std_srvs/Empty.h> 消息类型
+  event:
+    takeoff_command: "indooruav_core/state_machine_event/takeoff_command"
+    check_passed: "indooruav_core/state_machine_event/check_passed"
+    takeoff_complete: "indooruav_core/state_machine_event/takeoff_complete"
+    cruise_complete: "indooruav_core/state_machine_event/cruise_complete"
+    land_complete: "indooruav_core/state_machine_event/land_complete"
+    charge_complete: "indooruav_core/state_machine_event/charge_complete"
+    data_collection_start: "indooruav_core/state_machine_event/data_collection_start"
+    data_collection_complete: "indooruav_core/state_machine_event/data_collection_complete"
+  
+  # 状态机的ros client会向这些service请求，让下游执行相应动作
+  # 这些service也全部是 #include <std_srvs/Empty.h> 类型的service
+  action:
+    wait_timeout_sec: 1.0
+    await: "indooruav_core/action/await"
+    check_before_takeoff: "indooruav_core/action/check_before_takeoff"
+    takeoff: "indooruav_controller/controller_hardware/takeoff"
+    cruise: "indooruav_controller/waypoint_tracker/start"
+    land: "indooruav_controller/controller_hardware/land"
+    charge: "indooruav_core/action/charge"
+    data_collection: "indooruav_core/action/data_collection"
+
+    notify_waypoint_tracker_disable: "indooruav_controller/waypoint_tracker/stop"
+
+    notify_uav_open_light: "indooruav_controller/controller_hardware/light_open"
+    notify_uav_close_light: "indooruav_controller/controller_hardware/light_close"
+    notify_uav_video_recording_start: "indooruav_controller/controller_hardware/camera_video_start"
+    notify_uav_video_recording_stop: "indooruav_controller/controller_hardware/camera_video_stop"
+

@@ -1,0 +1,9 @@
+<launch>
+  <rosparam command="load" file="$(find indooruav_core)/config/config.yaml" />
+
+  <node
+    pkg="indooruav_core"
+    type="indooruav_core_node"
+    name="indooruav_core"
+    output="screen" />
+</launch>

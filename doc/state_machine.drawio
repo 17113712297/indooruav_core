@@ -1,0 +1,68 @@
+<mxfile host="65bd71144e">
+    <diagram id="gseiCsAa_WiANxyp-TKg" name="第 1 页">
+        <mxGraphModel dx="2348" dy="933" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="5" value="" style="whiteSpace=wrap;html=1;" parent="1" vertex="1">
+                    <mxGeometry x="250" y="820" width="260" height="260" as="geometry"/>
+                </mxCell>
+                <mxCell id="3" value="" style="whiteSpace=wrap;html=1;" parent="1" vertex="1">
+                    <mxGeometry x="295" y="890" width="170" height="150" as="geometry"/>
+                </mxCell>
+                <mxCell id="2" value="action_requester" style="whiteSpace=wrap;html=1;" parent="1" vertex="1">
+                    <mxGeometry x="320" y="970" width="120" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="4" value="state_machine" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" parent="1" vertex="1">
+                    <mxGeometry x="330" y="910" width="100" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="6" value="event_responder" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+                    <mxGeometry x="325" y="850" width="110" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="7" value="事件响应&lt;br&gt;&lt;br&gt;一些server&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;server的回调函数内部，去调用状态机的事件处理接口&lt;/div&gt;" style="whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="136" y="410" width="120" height="220" as="geometry"/>
+                </mxCell>
+                <mxCell id="8" value="外部event请求" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+                    <mxGeometry x="-80" y="520" width="100" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="10" value="" style="edgeStyle=none;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1">
+                    <mxGeometry width="100" relative="1" as="geometry">
+                        <mxPoint x="16" y="540" as="sourcePoint"/>
+                        <mxPoint x="116" y="540" as="targetPoint"/>
+                        <Array as="points"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="11" value="" style="edgeStyle=none;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1">
+                    <mxGeometry width="100" relative="1" as="geometry">
+                        <mxPoint x="271" y="535" as="sourcePoint"/>
+                        <mxPoint x="371" y="535" as="targetPoint"/>
+                        <Array as="points"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="12" value="状态机&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;根据自身状态和外部事件，来选择请求什么action&lt;/div&gt;" style="whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="394" y="410" width="120" height="220" as="geometry"/>
+                </mxCell>
+                <mxCell id="13" value="" style="edgeStyle=none;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1">
+                    <mxGeometry width="100" relative="1" as="geometry">
+                        <mxPoint x="561" y="535" as="sourcePoint"/>
+                        <mxPoint x="661" y="535" as="targetPoint"/>
+                        <Array as="points"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="14" value="动作请求&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;一些client&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;把接口暴露给状态机，让状态机调用client.call()，向下游service的server发出请求，让server真正执行动作&lt;/div&gt;" style="whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="688" y="410" width="120" height="220" as="geometry"/>
+                </mxCell>
+                <mxCell id="15" value="" style="edgeStyle=none;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1">
+                    <mxGeometry width="100" relative="1" as="geometry">
+                        <mxPoint x="831" y="535" as="sourcePoint"/>
+                        <mxPoint x="931" y="535" as="targetPoint"/>
+                        <Array as="points"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="16" value="类的关系图：只需要构造一个“事件响应者”就可以了" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+                    <mxGeometry x="76" y="780" width="300" height="30" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>
