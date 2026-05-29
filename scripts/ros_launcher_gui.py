@@ -44,6 +44,7 @@ COMMANDS = {
         {"label": "实物控制测试", "cmd": ["bash", os.path.join(SHELL_DIR, "test_controller_hardware.sh")],         "stdin": True},
         {"label": "里程计旋转",   "cmd": ["bash", os.path.join(SHELL_DIR, "odometry_frame_rotator.sh")]},
         {"label": "航点记录按钮", "cmd": ["bash", os.path.join(SHELL_DIR, "waypoint_record_button.sh")]},
+        {"label": "里程计记录",   "cmd": ["python", os.path.join(WORKSPACE, "src", "indooruav_core", "scripts", "odometry_recorder.py")]},
     ],
 }
 
