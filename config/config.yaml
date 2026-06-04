@@ -30,4 +30,6 @@ indooruav_core:
     notify_uav_close_light: "indooruav_controller/controller_hardware/light_close"
     notify_uav_video_recording_start: "indooruav_controller/controller_hardware/camera_video_start"
     notify_uav_video_recording_stop: "indooruav_controller/controller_hardware/camera_video_stop"
+    notify_uav_switch_video_mode: "indooruav_controller/controller_hardware/camera_mode_video"
+    notify_uav_switch_photo_mode: "indooruav_controller/controller_hardware/camera_mode_photo"
 

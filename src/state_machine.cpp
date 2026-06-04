@@ -60,7 +60,9 @@ void IndooruavStateMachine::Handle_TakeOff(Event event)
     switch (event) {
         case Event::TakeoffComplete:
             state_ = State::Cruise;
-            Action_NotifyUavOpenLight(); //起飞完成后，开启补光灯
+            Action_NotifyUavOpenLight();
+            Action_NotifyUavSwitchVideoMode();
+            Action_NotifyUavVideoRecordingStart();
             Action_Cruise();
             break;
         default:
@@ -79,6 +81,10 @@ void IndooruavStateMachine::Handle_Cruise(Event event)
             break;
         case Event::CruiseComplete:
             state_ = State::Land;
+            Action_NotifyWaypointTrackerDisable();
+            Action_NotifyUavCloseLight();
+            Action_NotifyUavVideoRecordingStop();
+            Action_NotifyUavSwitchPhotoMode();
             Action_Land();
             break;
         default:
@@ -184,4 +190,14 @@ void IndooruavStateMachine::Action_NotifyUavVideoRecordingStart()
 void IndooruavStateMachine::Action_NotifyUavVideoRecordingStop()
 {
     action_request_.Call_Action_NotifyUavVideoRecordingStop();
+}
+
+void IndooruavStateMachine::Action_NotifyUavSwitchVideoMode()
+{
+    action_request_.Call_Action_NotifyUavSwitchVideoMode();
+}
+
+void IndooruavStateMachine::Action_NotifyUavSwitchPhotoMode()
+{
+    action_request_.Call_Action_NotifyUavSwitchPhotoMode();
 }
