@@ -81,7 +81,6 @@ void IndooruavStateMachine::Handle_Cruise(Event event)
             break;
         case Event::CruiseComplete:
             state_ = State::Land;
-            Action_NotifyWaypointTrackerDisable();
             Action_NotifyUavCloseLight();
             Action_NotifyUavVideoRecordingStop();
             Action_NotifyUavSwitchPhotoMode();
