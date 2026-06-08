@@ -1,11 +1,21 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import math
 import os
 import rospy
 import yaml
 from datetime import datetime
 from nav_msgs.msg import Odometry
+
+class _OrderedDumper(yaml.Dumper):
+    pass
+
+def _dict_representer(dumper, data):
+    return dumper.represent_mapping("tag:yaml.org,2002:map", data.items())
+
+_OrderedDumper.add_representer(dict, _dict_representer)
+
 
 OUTPUT_DIR = os.path.join(
     os.path.expanduser("~"),
@@ -47,19 +57,15 @@ class OdometryRecorder(object):
 
     @staticmethod
     def _extract(msg):
+        q = msg.pose.pose.orientation
+        siny_cosp = 2.0 * (q.w * q.z + q.x * q.y)
+        cosy_cosp = 1.0 - 2.0 * (q.y * q.y + q.z * q.z)
+        yaw_deg = math.degrees(math.atan2(siny_cosp, cosy_cosp))
         return {
-            "timestamp": msg.header.stamp.to_sec(),
-            "position": {
-                "x": msg.pose.pose.position.x,
-                "y": msg.pose.pose.position.y,
-                "z": msg.pose.pose.position.z,
-            },
-            "orientation": {
-                "x": msg.pose.pose.orientation.x,
-                "y": msg.pose.pose.orientation.y,
-                "z": msg.pose.pose.orientation.z,
-                "w": msg.pose.pose.orientation.w,
-            },
+            "x": round(msg.pose.pose.position.x, 3),
+            "y": round(msg.pose.pose.position.y, 3),
+            "z": round(msg.pose.pose.position.z, 3),
+            "yaw_deg": round(yaw_deg, 1),
         }
 
     def _on_shutdown(self):
@@ -73,14 +79,14 @@ class OdometryRecorder(object):
         if self.odom_records:
             path = os.path.join(OUTPUT_DIR, "odometry_{}.yaml".format(ts))
             with open(path, "w") as f:
-                yaml.dump(self.odom_records, f, default_flow_style=False)
+                yaml.dump(self.odom_records, f, Dumper=_OrderedDumper, default_flow_style=None, width=120)
             rospy.loginfo("Saved {} Odometry records -> {}".format(
                 len(self.odom_records), path))
 
         if self.global_odom_records:
             path = os.path.join(OUTPUT_DIR, "odometry_global_{}.yaml".format(ts))
             with open(path, "w") as f:
-                yaml.dump(self.global_odom_records, f, default_flow_style=False)
+                yaml.dump(self.global_odom_records, f, Dumper=_OrderedDumper, default_flow_style=None, width=120)
             rospy.loginfo("Saved {} Odometry_global records -> {}".format(
                 len(self.global_odom_records), path))
 

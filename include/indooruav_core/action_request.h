@@ -35,6 +35,12 @@ public:
     
     // 请求无人机停止录像
     bool Call_Action_NotifyUavVideoRecordingStop();
+
+    // 请求无人机切换到视频模式
+    bool Call_Action_NotifyUavSwitchVideoMode();
+
+    // 请求无人机切换到拍照模式
+    bool Call_Action_NotifyUavSwitchPhotoMode();
 private:
     void LoadParameters();
     void InitializeClients();
@@ -53,6 +59,8 @@ private:
     std::string action_notify_uav_close_light_service_name_;
     std::string action_notify_uav_video_recording_start_service_name_;
     std::string action_notify_uav_video_recording_stop_service_name_;
+    std::string action_notify_uav_switch_video_mode_service_name_;
+    std::string action_notify_uav_switch_photo_mode_service_name_;
     double action_service_wait_timeout_sec_; 
 
     ros::NodeHandle nh_;
@@ -69,6 +77,8 @@ private:
     ros::ServiceClient action_notify_uav_close_light_client_;
     ros::ServiceClient action_notify_uav_video_recording_start_client_;
     ros::ServiceClient action_notify_uav_video_recording_stop_client_;
+    ros::ServiceClient action_notify_uav_switch_video_mode_client_;
+    ros::ServiceClient action_notify_uav_switch_photo_mode_client_;
 };
 
 

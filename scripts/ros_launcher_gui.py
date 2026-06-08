@@ -16,8 +16,10 @@ from tkinter import font as tkfont
 # ============================================================
 
 WORKSPACE = os.path.expanduser("~/Project/IndoorUavInspection2/catkin_ws")
+THREE_D_WORKSPACE = os.path.expanduser("~/Project/3D/catkin_ws")
 SHELL_DIR = os.path.join(WORKSPACE, "src", "shell")
 SETUP_BASH = os.path.join(WORKSPACE, "devel", "setup.bash")
+THREE_D_SETUP_BASH = os.path.join(THREE_D_WORKSPACE, "devel", "setup.bash")
 
 COMMANDS = {
     "Core": [
@@ -25,10 +27,10 @@ COMMANDS = {
     ],
     "Controller": [
         {"label": "启动仿真控制", "cmd": ["bash", os.path.join(SHELL_DIR, "bringup_controller_simulate.sh")]},
-        {"label": "启动实物控制", "cmd": ["bash", os.path.join(SHELL_DIR, "bringup_controller_hardware.sh")]},
+        {"label": "启动实物控制", "cmd": ["bash", "-c", 'echo "888888" | sudo -S chmod 666 /dev/i2c-7 && echo "888888" | sudo -S chmod 777 /dev/ttyTHS0 && bash ' + os.path.join(SHELL_DIR, "bringup_controller_hardware.sh")]},
     ],
     "SLAM": [
-        {"label": "启动MID360",   "cmd": ["roslaunch", "livox_ros_driver2", "msg_MID360.launch"]},
+        {"label": "启动MID360",   "cmd": ["roslaunch", os.path.join(THREE_D_WORKSPACE, "src", "livox_ros_driver2", "launch_ROS1", "msg_MID360.launch")]},
         {"label": "启动建图",     "cmd": ["bash", os.path.join(SHELL_DIR, "bringup_mapping.sh")]},
         {"label": "启动定位",     "cmd": ["bash", os.path.join(SHELL_DIR, "bringup_localize.sh")]},
     ],
@@ -41,8 +43,8 @@ COMMANDS = {
         {"label": "仿真控制测试", "cmd": ["bash", os.path.join(SHELL_DIR, "test_controller_simulate.sh")],         "stdin": True},
         {"label": "实物控制测试", "cmd": ["bash", os.path.join(SHELL_DIR, "test_controller_hardware.sh")],         "stdin": True},
         {"label": "里程计旋转",   "cmd": ["bash", os.path.join(SHELL_DIR, "odometry_frame_rotator.sh")]},
-        {"label": "里程计记录",   "cmd": ["bash", os.path.join(SHELL_DIR, "odometry_recorder.sh")]},
         {"label": "航点记录按钮", "cmd": ["bash", os.path.join(SHELL_DIR, "waypoint_record_button.sh")]},
+        {"label": "里程计记录",   "cmd": ["python", os.path.join(WORKSPACE, "src", "indooruav_core", "scripts", "odometry_recorder.py")]},
     ],
 }
 
@@ -221,9 +223,9 @@ class RosLauncher:
         if self._env_cache is not None:
             return dict(self._env_cache)
 
-        self._dbg(f"[DEBUG] Sourcing {SETUP_BASH} ...")
+        self._dbg(f"[DEBUG] Sourcing {THREE_D_SETUP_BASH} + {SETUP_BASH} ...")
         try:
-            cmd = f'source "{SETUP_BASH}" && env'
+            cmd = f'source "{THREE_D_SETUP_BASH}" && source "{SETUP_BASH}" --extend && env'
             output = subprocess.check_output(
                 cmd, shell=True, executable="/bin/bash",
                 stderr=subprocess.PIPE, timeout=30,

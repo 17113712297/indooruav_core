@@ -56,6 +56,12 @@ void ActionRequester::LoadParameters() {
     nh_.param<std::string>("/indooruav_core/action/notify_uav_video_recording_stop",
                            action_notify_uav_video_recording_stop_service_name_,
                            "indooruav_controller/controller_hardware/camera_video_stop");
+    nh_.param<std::string>("/indooruav_core/action/notify_uav_switch_video_mode",
+                           action_notify_uav_switch_video_mode_service_name_,
+                           "indooruav_controller/controller_hardware/camera_mode_video");
+    nh_.param<std::string>("/indooruav_core/action/notify_uav_switch_photo_mode",
+                           action_notify_uav_switch_photo_mode_service_name_,
+                           "indooruav_controller/controller_hardware/camera_mode_photo");
     nh_.param<double>("/indooruav_core/action/wait_timeout_sec",
                       action_service_wait_timeout_sec_,
                       kDefaultActionServiceWaitTimeoutSec);
@@ -96,6 +102,10 @@ void ActionRequester::InitializeClients() {
         nh_.serviceClient<std_srvs::Empty>(action_notify_uav_video_recording_start_service_name_);
     action_notify_uav_video_recording_stop_client_ =
         nh_.serviceClient<std_srvs::Empty>(action_notify_uav_video_recording_stop_service_name_);
+    action_notify_uav_switch_video_mode_client_ =
+        nh_.serviceClient<std_srvs::Empty>(action_notify_uav_switch_video_mode_service_name_);
+    action_notify_uav_switch_photo_mode_client_ =
+        nh_.serviceClient<std_srvs::Empty>(action_notify_uav_switch_photo_mode_service_name_);
 }
 
 bool ActionRequester::Call_Action_Await() {
@@ -154,6 +164,16 @@ bool ActionRequester::Call_Action_NotifyUavVideoRecordingStart()
 bool ActionRequester::Call_Action_NotifyUavVideoRecordingStop()
 {
     return CallActionService(action_notify_uav_video_recording_stop_client_, action_notify_uav_video_recording_stop_service_name_);
+}
+
+bool ActionRequester::Call_Action_NotifyUavSwitchVideoMode()
+{
+    return CallActionService(action_notify_uav_switch_video_mode_client_, action_notify_uav_switch_video_mode_service_name_);
+}
+
+bool ActionRequester::Call_Action_NotifyUavSwitchPhotoMode()
+{
+    return CallActionService(action_notify_uav_switch_photo_mode_client_, action_notify_uav_switch_photo_mode_service_name_);
 }
 
 bool ActionRequester::CallActionService(ros::ServiceClient &client, const std::string &service_name)
