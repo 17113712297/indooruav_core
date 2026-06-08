@@ -35,8 +35,9 @@ COMMANDS = {
         {"label": "启动定位",     "cmd": ["bash", os.path.join(SHELL_DIR, "bringup_localize.sh")]},
     ],
     "Waypoint": [
-        {"label": "启动航线追踪", "cmd": ["bash", os.path.join(SHELL_DIR, "bringup_waypoint_tracker.sh")]},
-        {"label": "启动航线记录", "cmd": ["bash", os.path.join(SHELL_DIR, "bringup_waypoint_recorder.sh")]},
+        {"label": "启动航线追踪",     "cmd": ["bash", os.path.join(SHELL_DIR, "bringup_waypoint_tracker.sh")]},
+        {"label": "启动航线记录(direct)",   "cmd": ["bash", os.path.join(SHELL_DIR, "bringup_waypoint_recorder.sh"), "direct"]},
+        {"label": "启动航线记录(path)",     "cmd": ["bash", os.path.join(SHELL_DIR, "bringup_waypoint_recorder.sh"), "path_relay"]},
     ],
     "Test Tools": [
         {"label": "状态机测试",   "cmd": ["bash", os.path.join(SHELL_DIR, "test_state_machine.sh")],               "stdin": True},
