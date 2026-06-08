@@ -23,6 +23,7 @@ indooruav_core:
     land: "indooruav_controller/controller_hardware/land"
     charge: "indooruav_core/action/charge"
     data_collection: "indooruav_core/action/data_collection"
+    notify_http_post_land_workflow: "indooruav_http/run_post_land_workflow"
 
     notify_waypoint_tracker_disable: "indooruav_controller/waypoint_tracker/stop"
 
@@ -30,4 +31,3 @@ indooruav_core:
     notify_uav_close_light: "indooruav_controller/controller_hardware/light_close"
     notify_uav_video_recording_start: "indooruav_controller/controller_hardware/camera_video_start"
     notify_uav_video_recording_stop: "indooruav_controller/controller_hardware/camera_video_stop"
-

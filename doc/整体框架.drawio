@@ -1,0 +1,202 @@
+<mxfile host="Electron" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/27.0.2 Chrome/134.0.6998.205 Electron/35.3.0 Safari/537.36" version="27.0.2">
+  <diagram name="第 1 页" id="fpnlZoYJWzMkyIfIlWE3">
+    <mxGraphModel dx="-1724" dy="934" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="kbuX-X-LbUNiHw7Y8Rr1-105" value="" style="whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="5660" y="2140" width="270" height="300" as="geometry" />
+        </mxCell>
+        <mxCell id="kbuX-X-LbUNiHw7Y8Rr1-89" value="" style="whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="4630" y="1754" width="720" height="236" as="geometry" />
+        </mxCell>
+        <mxCell id="kbuX-X-LbUNiHw7Y8Rr1-72" value="" style="whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="5000" y="2000" width="640" height="280" as="geometry" />
+        </mxCell>
+        <mxCell id="kbuX-X-LbUNiHw7Y8Rr1-86" value="" style="whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="4270" y="1480" width="720" height="270" as="geometry" />
+        </mxCell>
+        <mxCell id="kbuX-X-LbUNiHw7Y8Rr1-52" value="" style="whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="3990" y="1140" width="640" height="280" as="geometry" />
+        </mxCell>
+        <mxCell id="kbuX-X-LbUNiHw7Y8Rr1-50" value="" style="whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="3690" y="810" width="570" height="300" as="geometry" />
+        </mxCell>
+        <mxCell id="kbuX-X-LbUNiHw7Y8Rr1-106" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="kbuX-X-LbUNiHw7Y8Rr1-12" target="kbuX-X-LbUNiHw7Y8Rr1-14">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="kbuX-X-LbUNiHw7Y8Rr1-107" value="起飞指令" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="kbuX-X-LbUNiHw7Y8Rr1-106">
+          <mxGeometry x="0.0667" y="3" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="kbuX-X-LbUNiHw7Y8Rr1-12" value="上位机" style="whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="3740" y="1030" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="kbuX-X-LbUNiHw7Y8Rr1-13" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;" edge="1" parent="1" source="kbuX-X-LbUNiHw7Y8Rr1-14" target="kbuX-X-LbUNiHw7Y8Rr1-16">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="kbuX-X-LbUNiHw7Y8Rr1-14" value="王功能包&lt;div&gt;1.解析起飞指令&lt;br&gt;2.调用&lt;span style=&quot;color: rgb(63, 63, 63);&quot;&gt;起飞指令事件&amp;nbsp;&lt;/span&gt;客户端&lt;/div&gt;" style="whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="3740" y="840" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="kbuX-X-LbUNiHw7Y8Rr1-15" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" edge="1" parent="1" source="kbuX-X-LbUNiHw7Y8Rr1-16" target="kbuX-X-LbUNiHw7Y8Rr1-22">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="kbuX-X-LbUNiHw7Y8Rr1-16" value="触发服务端回调&lt;br&gt;调用状态机函数" style="whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="3960" y="840" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="kbuX-X-LbUNiHw7Y8Rr1-19" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="kbuX-X-LbUNiHw7Y8Rr1-20" target="kbuX-X-LbUNiHw7Y8Rr1-22">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="kbuX-X-LbUNiHw7Y8Rr1-20" value="待机状态" style="whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="4120" y="840" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="kbuX-X-LbUNiHw7Y8Rr1-21" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="kbuX-X-LbUNiHw7Y8Rr1-22" target="kbuX-X-LbUNiHw7Y8Rr1-26">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="kbuX-X-LbUNiHw7Y8Rr1-22" value="进入待机状态函数&lt;br&gt;变为自检状态&lt;br&gt;&lt;b&gt;调用自检动作服务的客户端&lt;/b&gt;&lt;br&gt;&lt;br&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;" style="whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="4050" y="980" width="150" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="kbuX-X-LbUNiHw7Y8Rr1-46" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="kbuX-X-LbUNiHw7Y8Rr1-26" target="kbuX-X-LbUNiHw7Y8Rr1-42">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="kbuX-X-LbUNiHw7Y8Rr1-55" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;startArrow=openThin;startFill=0;" edge="1" parent="1" source="kbuX-X-LbUNiHw7Y8Rr1-26" target="kbuX-X-LbUNiHw7Y8Rr1-54">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="kbuX-X-LbUNiHw7Y8Rr1-56" value="低速传输通道" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="kbuX-X-LbUNiHw7Y8Rr1-55">
+          <mxGeometry x="-0.0028" y="-1" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="kbuX-X-LbUNiHw7Y8Rr1-26" value="陈建功能包&lt;br&gt;自检动作的服务端(回调)&lt;div&gt;自检成功&lt;br&gt;成功的话调用&quot;自检通过事件服务&quot;的客户端&lt;br&gt;&lt;/div&gt;" style="whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="4006" y="1185" width="235" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="kbuX-X-LbUNiHw7Y8Rr1-41" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" edge="1" parent="1" source="kbuX-X-LbUNiHw7Y8Rr1-42" target="kbuX-X-LbUNiHw7Y8Rr1-45">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="kbuX-X-LbUNiHw7Y8Rr1-42" value="触发服务端回调&lt;br&gt;调用状态机函数" style="whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="4300" y="1185" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="kbuX-X-LbUNiHw7Y8Rr1-43" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="kbuX-X-LbUNiHw7Y8Rr1-44" target="kbuX-X-LbUNiHw7Y8Rr1-45">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="kbuX-X-LbUNiHw7Y8Rr1-44" value="自检状态" style="whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="4478.5" y="1185" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="kbuX-X-LbUNiHw7Y8Rr1-85" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" edge="1" parent="1" source="kbuX-X-LbUNiHw7Y8Rr1-45">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="4440" y="1490" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="kbuX-X-LbUNiHw7Y8Rr1-45" value="进入自检状态函数&lt;br&gt;变为&lt;span style=&quot;color: rgb(63, 63, 63);&quot;&gt;起飞&lt;/span&gt;状态&lt;br&gt;执行起飞动作&lt;br&gt;(调用自检动作函数的服务)&lt;br&gt;(客户端发送请求)&lt;div&gt;&lt;br&gt;&lt;/div&gt;" style="whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="4380" y="1300" width="150" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="kbuX-X-LbUNiHw7Y8Rr1-63" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="kbuX-X-LbUNiHw7Y8Rr1-48" target="kbuX-X-LbUNiHw7Y8Rr1-59">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="kbuX-X-LbUNiHw7Y8Rr1-48" value="潘文磊功能包&lt;br&gt;起飞动作的服务端(回调)&lt;div&gt;成功的话调用&quot;&lt;b&gt;&lt;span style=&quot;color: rgb(63, 63, 63); background-color: transparent;&quot;&gt;起飞完成事件&lt;/span&gt;&lt;/b&gt;&quot;的客户端&lt;/div&gt;" style="whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="4320" y="1505" width="235" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="kbuX-X-LbUNiHw7Y8Rr1-54" value="MSDK自检" style="whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="4080.5" y="1340" width="86" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="kbuX-X-LbUNiHw7Y8Rr1-58" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" edge="1" parent="1" source="kbuX-X-LbUNiHw7Y8Rr1-59" target="kbuX-X-LbUNiHw7Y8Rr1-62">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="kbuX-X-LbUNiHw7Y8Rr1-59" value="触发服务端回调&lt;br&gt;调用状态机函数" style="whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="4619.5" y="1505" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="kbuX-X-LbUNiHw7Y8Rr1-60" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="kbuX-X-LbUNiHw7Y8Rr1-61" target="kbuX-X-LbUNiHw7Y8Rr1-62">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="kbuX-X-LbUNiHw7Y8Rr1-61" value="起飞状态" style="whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="4798" y="1505" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="kbuX-X-LbUNiHw7Y8Rr1-65" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="kbuX-X-LbUNiHw7Y8Rr1-62" target="kbuX-X-LbUNiHw7Y8Rr1-64">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="kbuX-X-LbUNiHw7Y8Rr1-62" value="进入起飞状态函数&lt;br&gt;变为&lt;font color=&quot;#3f3f3f&quot;&gt;巡航&lt;/font&gt;状态&lt;br&gt;执行巡航动作&lt;br&gt;执行开启补光灯动作&lt;br&gt;执行录像动作&lt;br&gt;(调用巡航动作函数的服务)&lt;br&gt;(客户端发送请求)&lt;div&gt;&lt;br&gt;&lt;/div&gt;" style="whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="4699.5" y="1620" width="150" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="kbuX-X-LbUNiHw7Y8Rr1-71" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;" edge="1" parent="1" source="kbuX-X-LbUNiHw7Y8Rr1-64" target="kbuX-X-LbUNiHw7Y8Rr1-67">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="kbuX-X-LbUNiHw7Y8Rr1-64" value="潘文磊功能包&lt;br&gt;巡航动作的服务端(回调)&lt;div&gt;成功的话调用&lt;b&gt;巡航完成事件&lt;/b&gt;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;的客户端&lt;/span&gt;&lt;/div&gt;" style="whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="4650" y="1770" width="235" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="kbuX-X-LbUNiHw7Y8Rr1-66" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" edge="1" parent="1" source="kbuX-X-LbUNiHw7Y8Rr1-67" target="kbuX-X-LbUNiHw7Y8Rr1-70">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="kbuX-X-LbUNiHw7Y8Rr1-67" value="触发服务端回调&lt;br&gt;调用状态机函数" style="whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="4950" y="1770" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="kbuX-X-LbUNiHw7Y8Rr1-68" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="kbuX-X-LbUNiHw7Y8Rr1-69" target="kbuX-X-LbUNiHw7Y8Rr1-70">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="kbuX-X-LbUNiHw7Y8Rr1-69" value="巡航状态" style="whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="5128.5" y="1770" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="kbuX-X-LbUNiHw7Y8Rr1-88" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="kbuX-X-LbUNiHw7Y8Rr1-70" target="kbuX-X-LbUNiHw7Y8Rr1-76">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="kbuX-X-LbUNiHw7Y8Rr1-70" value="进入巡航状态函数&lt;br&gt;变为降落状态&lt;br&gt;执行降落动作&lt;div&gt;执行关闭了录像动作&lt;br&gt;执行关闭补光灯动作&lt;br&gt;执行切换拍照模式动作&lt;br&gt;(调用降落动作函数的服务)&lt;br&gt;(客户端发送请求)&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;/div&gt;" style="whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="5030" y="1885" width="150" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="kbuX-X-LbUNiHw7Y8Rr1-73" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="kbuX-X-LbUNiHw7Y8Rr1-76" target="kbuX-X-LbUNiHw7Y8Rr1-78">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="kbuX-X-LbUNiHw7Y8Rr1-74" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;startArrow=openThin;startFill=0;" edge="1" parent="1" source="kbuX-X-LbUNiHw7Y8Rr1-76" target="kbuX-X-LbUNiHw7Y8Rr1-83">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="kbuX-X-LbUNiHw7Y8Rr1-75" value="低速传输通道" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="kbuX-X-LbUNiHw7Y8Rr1-74">
+          <mxGeometry x="-0.0028" y="-1" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="kbuX-X-LbUNiHw7Y8Rr1-76" value="陈建功能包&lt;br&gt;降落动作的服务端(回调)&lt;div&gt;成功的话调用&quot;降落完成事件服务&quot;的客户端&lt;/div&gt;" style="whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="5016" y="2045" width="235" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="kbuX-X-LbUNiHw7Y8Rr1-77" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" edge="1" parent="1" source="kbuX-X-LbUNiHw7Y8Rr1-78" target="kbuX-X-LbUNiHw7Y8Rr1-82">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="kbuX-X-LbUNiHw7Y8Rr1-78" value="触发服务端回调&lt;br&gt;调用状态机函数" style="whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="5310" y="2045" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="kbuX-X-LbUNiHw7Y8Rr1-79" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="kbuX-X-LbUNiHw7Y8Rr1-80" target="kbuX-X-LbUNiHw7Y8Rr1-82">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="kbuX-X-LbUNiHw7Y8Rr1-80" value="降落状态" style="whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="5488.5" y="2045" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="kbuX-X-LbUNiHw7Y8Rr1-81" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="kbuX-X-LbUNiHw7Y8Rr1-82" target="kbuX-X-LbUNiHw7Y8Rr1-96">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="5673" y="2205" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="kbuX-X-LbUNiHw7Y8Rr1-82" value="进入降落状态函数&lt;br&gt;变为&lt;font color=&quot;#3f3f3f&quot;&gt;待机&lt;/font&gt;状态&lt;br&gt;执行降落完成动作&lt;br&gt;(调用充电动作函数的服务)&lt;br&gt;(客户端发送请求)&lt;div&gt;&lt;br&gt;&lt;/div&gt;" style="whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="5390" y="2160" width="150" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="kbuX-X-LbUNiHw7Y8Rr1-83" value="MSDK自检" style="whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="5090.5" y="2200" width="86" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="kbuX-X-LbUNiHw7Y8Rr1-94" value="上位机" style="whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="5740" y="2360" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="kbuX-X-LbUNiHw7Y8Rr1-102" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="kbuX-X-LbUNiHw7Y8Rr1-96" target="kbuX-X-LbUNiHw7Y8Rr1-94">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="kbuX-X-LbUNiHw7Y8Rr1-104" value="已降落" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="kbuX-X-LbUNiHw7Y8Rr1-102">
+          <mxGeometry x="-0.0476" y="2" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="kbuX-X-LbUNiHw7Y8Rr1-96" value="王功能包&lt;div&gt;1.触发降落完成动作服务端回调&lt;br&gt;2.给上位机发送信息&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;" style="whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="5740" y="2170" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="kbuX-X-LbUNiHw7Y8Rr1-112" value="客户端发送indooruav_core/state_machine_event/takeoff_command服务&lt;br&gt;状态能从Await 变成CheckBeforeTakeOff (打印出来)&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;div&gt;在&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;Await&lt;/span&gt;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;&amp;nbsp;函数中加 自检动作函数客户端&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;&lt;br&gt;功能包订阅执行&lt;/span&gt;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;自检动作函数&lt;br&gt;&lt;/span&gt;客户端发送indooruav_core/state_machine_event/check_passed服务&lt;/div&gt;&lt;div&gt;&lt;br&gt;状态能从CheckBeforeTakeOff&amp;nbsp;变成TakeOff (打印出来)&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;&lt;br&gt;&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;" style="whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="4320" y="730" width="750" height="300" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
