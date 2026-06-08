@@ -79,6 +79,9 @@ private:
     
     void Action_NotifyUavVideoRecordingStart();
     void Action_NotifyUavVideoRecordingStop();
+
+    void Action_NotifyUavSwitchVideoMode();
+    void Action_NotifyUavSwitchPhotoMode();
 };
 
 #endif //STATE_MACHINE_H
