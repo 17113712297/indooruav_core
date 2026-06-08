@@ -35,6 +35,9 @@ void EventResponder::LoadParameters() {
     nh_.param<std::string>("/indooruav_core/state_machine_event/data_collection_complete",
                            event_data_collection_complete_service_name_,
                            "indooruav_core/state_machine_event/data_collection_complete");
+    nh_.param<std::string>("/indooruav_core/state_machine_event/check_failed",
+                           event_check_failed_service_name_,
+                           "indooruav_core/state_machine_event/check_failed");
 }
 
 void EventResponder::InitializeServers() {
@@ -69,6 +72,10 @@ void EventResponder::InitializeServers() {
     event_data_collection_complete_server_ =
         nh_.advertiseService(event_data_collection_complete_service_name_,
                              &EventResponder::HandleDataCollectionComplete,
+                             this);
+    event_check_failed_server_ =
+        nh_.advertiseService(event_check_failed_service_name_,
+                             &EventResponder::HandleCheckFailed,
                              this);
 }
 
@@ -141,5 +148,13 @@ bool EventResponder::HandleDataCollectionComplete(std_srvs::Empty::Request& requ
     (void)response;
     // TODO: implement data collection complete event handling.
     state_machine_.HandleEvent(Event::DataCollectionComplete);
+    return true;
+}
+
+bool EventResponder::HandleCheckFailed(std_srvs::Empty::Request& request,
+                                        std_srvs::Empty::Response& response) {
+    (void)request;
+    (void)response;
+    state_machine_.HandleEvent(Event::CheckFailed);
     return true;
 }

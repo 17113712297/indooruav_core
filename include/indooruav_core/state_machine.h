@@ -40,6 +40,7 @@ inline std::string ToString(Event event) {
         case Event::ChargeComplete:         return "ChargeComplete";
         case Event::DataCollectionStart:    return "DataCollectionStart";
         case Event::DataCollectionComplete: return "DataCollectionComplete";
+        case Event::CheckFailed:            return "CheckFailed";
         default:                            return "Unknown";
     }
 }
@@ -70,6 +71,7 @@ private:
     void Action_DataCollection();
     void Action_Land();
     void Action_Charge();
+    void Action_NotifyHttpPostLandWorkflow();
 
     void Action_NotifyWaypointTrackerDisable();
     

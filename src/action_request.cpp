@@ -38,6 +38,9 @@ void ActionRequester::LoadParameters() {
     nh_.param<std::string>("/indooruav_core/action/data_collection",
                            action_data_collection_service_name_,
                            "indooruav_core/action/data_collection");
+    nh_.param<std::string>("/indooruav_core/action/notify_http_post_land_workflow",
+                           action_notify_http_post_land_workflow_service_name_,
+                           "indooruav_http/run_post_land_workflow");
     nh_.param<std::string>("/indooruav_core/action/notify_waypoint_tracker_disable",
                            action_notify_waypoint_tracker_disable_service_name_,
                            "indooruav_controller/waypoint_tracker/stop");
@@ -87,6 +90,8 @@ void ActionRequester::InitializeClients() {
         nh_.serviceClient<std_srvs::Empty>(action_charge_service_name_);
     action_data_collection_client_ =
         nh_.serviceClient<std_srvs::Empty>(action_data_collection_service_name_);
+    action_notify_http_post_land_workflow_client_ =
+        nh_.serviceClient<std_srvs::Empty>(action_notify_http_post_land_workflow_service_name_);
     action_notify_waypoint_tracker_disable_client_ =
         nh_.serviceClient<std_srvs::Empty>(action_notify_waypoint_tracker_disable_service_name_);
     action_notify_uav_open_light_client_ =
@@ -129,6 +134,11 @@ bool ActionRequester::Call_Action_Charge() {
 
 bool ActionRequester::Call_Action_DataCollection() {
     return CallActionService(action_data_collection_client_, action_data_collection_service_name_);
+}
+
+bool ActionRequester::Call_Action_NotifyHttpPostLandWorkflow() {
+    return CallActionService(action_notify_http_post_land_workflow_client_,
+                             action_notify_http_post_land_workflow_service_name_);
 }
 
 bool ActionRequester::Call_Action_NotifyWaypointTrackerDisable()

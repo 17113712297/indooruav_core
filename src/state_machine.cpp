@@ -1,6 +1,6 @@
 #include "indooruav_core/state_machine.h"
 
-void IndooruavStateMachine::HandleEvent(Event event) 
+void  IndooruavStateMachine::HandleEvent(Event event) 
 {
     std::cout << "\n[Event] " << ToString(event) << ", [Current State] " << ToString(this->state_) << "\n";
 
@@ -49,6 +49,10 @@ void IndooruavStateMachine::Handle_CheckBeforeTakeOff(Event event)
         case Event::CheckPassed:
             state_ = State::TakeOff;
             Action_TakeOff();
+            break;
+        case Event::CheckFailed:
+            state_ = State::Await;
+            Action_Await();
             break;
         default:
             break;
@@ -113,6 +117,9 @@ void IndooruavStateMachine::Handle_Land(Event event)
         case Event::LandComplete:
             state_ = State::Charge;
             Action_NotifyUavCloseLight(); //降落完成后，关闭补光灯
+            // 这里在“降落完成并切入 Charge”时触发前端回传流程。
+            // 该流程由 http 功能包异步执行，不阻塞状态机继续执行后续动作。
+            Action_NotifyHttpPostLandWorkflow();
             Action_Charge();
             break;
         default:
@@ -165,6 +172,11 @@ void IndooruavStateMachine::Action_Land()
 void IndooruavStateMachine::Action_Charge()
 {
     action_request_.Call_Action_Charge();
+}
+
+void IndooruavStateMachine::Action_NotifyHttpPostLandWorkflow()
+{
+    action_request_.Call_Action_NotifyHttpPostLandWorkflow();
 }
 
 void IndooruavStateMachine::Action_NotifyWaypointTrackerDisable()
