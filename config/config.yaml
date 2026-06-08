@@ -11,16 +11,17 @@ indooruav_core:
     charge_complete: "indooruav_core/state_machine_event/charge_complete"
     data_collection_start: "indooruav_core/state_machine_event/data_collection_start"
     data_collection_complete: "indooruav_core/state_machine_event/data_collection_complete"
+    check_failed: "indooruav_core/state_machine_event/check_failed"
   
   # 状态机的ros client会向这些service请求，让下游执行相应动作
   # 这些service也全部是 #include <std_srvs/Empty.h> 类型的service
   action:
     wait_timeout_sec: 1.0
     await: "indooruav_core/action/await"
-    check_before_takeoff: "indooruav_core/action/check_before_takeoff"
+    check_before_takeoff: "indooruav_controller/controller_hardware/vision_check"
     takeoff: "indooruav_controller/controller_hardware/takeoff"
     cruise: "indooruav_controller/waypoint_tracker/start"
-    land: "indooruav_controller/controller_hardware/land"
+    land: "indooruav_controller/controller_hardware/vision_landing"
     charge: "indooruav_core/action/charge"
     data_collection: "indooruav_core/action/data_collection"
 

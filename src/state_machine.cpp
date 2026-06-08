@@ -50,6 +50,10 @@ void IndooruavStateMachine::Handle_CheckBeforeTakeOff(Event event)
             state_ = State::TakeOff;
             Action_TakeOff();
             break;
+        case Event::CheckFailed:
+            state_ = State::Await;
+            Action_Await();
+            break;
         default:
             break;
     }

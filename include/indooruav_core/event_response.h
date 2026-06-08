@@ -24,6 +24,7 @@ private:
     bool HandleChargeComplete(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response);
     bool HandleDataCollectionStart(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response);
     bool HandleDataCollectionComplete(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response);
+    bool HandleCheckFailed(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response);
 
 private:
     IndooruavStateMachine state_machine_;
@@ -36,6 +37,7 @@ private:
     std::string event_charge_complete_service_name_;
     std::string event_data_collection_start_service_name_;
     std::string event_data_collection_complete_service_name_;
+    std::string event_check_failed_service_name_;
 
     ros::NodeHandle nh_;
     ros::ServiceServer event_takeoff_command_server_;
@@ -46,6 +48,7 @@ private:
     ros::ServiceServer event_charge_complete_server_;
     ros::ServiceServer event_data_collection_start_server_;
     ros::ServiceServer event_data_collection_complete_server_;
+    ros::ServiceServer event_check_failed_server_;
 };
 
 
