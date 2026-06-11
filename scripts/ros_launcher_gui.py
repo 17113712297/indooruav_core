@@ -7,9 +7,13 @@ import signal
 import time
 import traceback
 import threading
+import glob
 import tkinter as tk
 from tkinter import ttk, scrolledtext
 from tkinter import font as tkfont
+
+import rospy
+from geometry_msgs.msg import Twist
 
 # ============================================================
 # Configuration — add entries here to extend
@@ -20,6 +24,11 @@ THREE_D_WORKSPACE = os.path.expanduser("~/Project/3D/catkin_ws")
 SHELL_DIR = os.path.join(WORKSPACE, "src", "shell")
 SETUP_BASH = os.path.join(WORKSPACE, "devel", "setup.bash")
 THREE_D_SETUP_BASH = os.path.join(THREE_D_WORKSPACE, "devel", "setup.bash")
+
+MAP_DIR = os.path.join(WORKSPACE, "src", "FASTLIO2_SAM_LC", "map")
+VEL_TOPIC = "indooruav_controller/waypoint_tracker/cmd_vel"
+VEL_RATE_HZ = 10.0
+VEL_STEP = 0.1  # m/s per click
 
 COMMANDS = {
     "Core": [
@@ -85,6 +94,13 @@ class RosLauncher:
         self.stdin_entries = {}   # label -> (Entry, Button) for interactive processes
         self.roscore_proc = None  # managed roscore process
 
+        # Velocity control state
+        self.vel_enabled = False
+        self.vel_pub = None
+        self.vel_values = [0.0, 0.0, 0.0, 0.0]  # vx, vy, vz, yaw_rate
+        self.vel_thread = None
+        self.vel_running = False
+
         cjk_font = self._detect_cjk_font()
         self._cjk_font = cjk_font
         default_font = (cjk_font, 10)
@@ -144,6 +160,11 @@ class RosLauncher:
 
     def _on_close(self):
         """Clean up all processes, gazebo, and roscore on window close."""
+        # Stop velocity control
+        self.vel_running = False
+        if self.vel_pub:
+            self.vel_pub.publish(Twist())
+
         self._kill_all()
         self._kill_gazebo()
         if self.roscore_proc and self.roscore_proc.poll() is None:
@@ -382,6 +403,117 @@ class RosLauncher:
         except Exception as e:
             self._log(f"[ERR] 保存地图失败: {e}", label="System")
 
+    # ------------------------------------------------------------------
+    # Map selection
+    # ------------------------------------------------------------------
+
+    def _load_map_list(self):
+        """Scan MAP_DIR for .pcd files and populate the combobox."""
+        try:
+            def _sort_key(f):
+                name = os.path.splitext(os.path.basename(f))[0]
+                return (0, int(name)) if name.isdigit() else (1, name)
+            pcd_files = sorted(glob.glob(os.path.join(MAP_DIR, "*.pcd")), key=_sort_key)
+            names = [os.path.basename(f) for f in pcd_files]
+            self.map_combo["values"] = names
+            if names:
+                self.map_combo.set(names[0])
+            print(f"[DEBUG] Found {len(names)} PCD files in {MAP_DIR}", file=sys.stderr)
+        except Exception as e:
+            print(f"[DEBUG] Failed to scan map dir: {e}", file=sys.stderr)
+
+    def _apply_map(self):
+        """Set the selected map PCD name via rosparam."""
+        selected = self.map_combo.get()
+        if not selected:
+            self._log("[WARN] 未选择地图！", label="System")
+            return
+        try:
+            env = self._get_env()
+            param_name = "localizer/auto_reloc/pcd_name"
+            subprocess.run(
+                ["rosparam", "set", param_name, selected],
+                env=env, capture_output=True, text=True, timeout=5,
+            )
+            self._log(f"[MAP] 已设置定位地图: {selected}", label="System")
+            self._log(f"[MAP] 请重启定位节点使地图生效", label="System")
+        except Exception as e:
+            self._log(f"[ERR] 设置地图失败: {e}", label="System")
+
+    # ------------------------------------------------------------------
+    # Velocity control
+    # ------------------------------------------------------------------
+
+    def _init_ros_vel(self):
+        """Initialize ROS node and velocity publisher if not already done."""
+        if self.vel_pub is not None:
+            return True
+        try:
+            if not rospy.core.is_initialized():
+                rospy.init_node("ros_launcher_gui", anonymous=True, disable_signals=True)
+            self.vel_pub = rospy.Publisher(VEL_TOPIC, Twist, queue_size=1)
+            self._dbg(f"[DEBUG] Velocity publisher ready on {VEL_TOPIC}")
+            return True
+        except Exception as e:
+            self._dbg(f"[DEBUG] Failed to init ROS vel: {e}")
+            return False
+
+    def _toggle_vel_control(self):
+        """Enable or disable velocity control mode."""
+        if not self.vel_enabled:
+            if not self._init_ros_vel():
+                self._log("[ERR] 无法初始化 ROS 速度发布", label="System")
+                return
+            self.vel_enabled = True
+            self.vel_running = True
+            self.vel_btn.config(text="关闭控制")
+            self._log("[VEL] 速度控制已开启", label="System")
+
+            # Start publisher thread
+            self.vel_thread = threading.Thread(target=self._vel_pub_loop, daemon=True)
+            self.vel_thread.start()
+        else:
+            self.vel_enabled = False
+            self.vel_running = False
+            self.vel_btn.config(text="开启控制")
+            # Send zero velocity
+            if self.vel_pub:
+                self.vel_pub.publish(Twist())
+            self._zero_vel()
+            self._log("[VEL] 速度控制已关闭", label="System")
+
+    def _vel_pub_loop(self):
+        """Publish velocity at 10Hz while enabled."""
+        rate = rospy.Rate(VEL_RATE_HZ)
+        while self.vel_running and not rospy.is_shutdown():
+            twist = Twist()
+            twist.linear.x = self.vel_values[0]
+            twist.linear.y = self.vel_values[1]
+            twist.linear.z = self.vel_values[2]
+            twist.angular.z = self.vel_values[3]
+            if self.vel_pub:
+                self.vel_pub.publish(twist)
+            rate.sleep()
+
+    def _adjust_vel(self, axis, direction):
+        """Adjust velocity for given axis by VEL_STEP * direction."""
+        if not self.vel_enabled:
+            self._log("[WARN] 请先开启速度控制", label="System")
+            return
+        self.vel_values[axis] += VEL_STEP * direction
+        self.vel_values[axis] = round(self.vel_values[axis], 2)
+        self._update_vel_display()
+
+    def _zero_vel(self):
+        """Set all velocities to zero."""
+        self.vel_values = [0.0, 0.0, 0.0, 0.0]
+        self._update_vel_display()
+
+    def _update_vel_display(self):
+        """Update velocity display labels."""
+        for i, lbl in enumerate(self.vel_labels):
+            lbl.config(text=f"{self.vel_values[i]:+.2f}")
+
     def _kill_all(self):
         for label in list(self.processes.keys()):
             self._kill(label)
@@ -431,79 +563,146 @@ class RosLauncher:
         main.grid(row=0, column=0, sticky="nsew")
 
         F = self._cjk_font
-
         row = 0
-        # Roscore status bar
-        roscore_frame = ttk.Frame(main)
-        roscore_frame.grid(row=row, column=0, sticky="ew", pady=(0, 8))
-        ttk.Label(roscore_frame, text="roscore:", font=(F, 9, "bold")).pack(side="left")
-        self.roscore_status = ttk.Label(roscore_frame, text="", font=(F, 9))
-        self.roscore_status.pack(side="left", padx=(4, 0))
+
+        # ── 顶部状态栏 ──────────────────────────────────────────────
+        top_bar = ttk.Frame(main)
+        top_bar.grid(row=row, column=0, sticky="ew", pady=(0, 8))
+        ttk.Label(top_bar, text="ROS Launch Manager", font=(F, 12, "bold")).pack(side="left")
+        self.roscore_status = ttk.Label(top_bar, text="", font=(F, 9))
+        self.roscore_status.pack(side="left", padx=(12, 0))
         self._update_roscore_status()
+        ttk.Button(top_bar, text="全部停止", command=self._kill_all).pack(side="right")
         row += 1
 
-        ttk.Separator(main, orient="horizontal").grid(
-            row=row, column=0, sticky="ew", pady=(0, 4)
-        )
+        ttk.Separator(main, orient="horizontal").grid(row=row, column=0, sticky="ew", pady=(0, 4))
         row += 1
 
-        for category, items in COMMANDS.items():
-            ttk.Label(main, text=category, font=(F, 10, "bold")).grid(
-                row=row, column=0, sticky="w", pady=(12, 2)
-            )
-            row += 1
+        # ── 启动按钮区域（按行分组）────────────────────────────────
+        # 第一行: Core, Controller, SLAM
+        row1_categories = ["Core", "Controller", "SLAM"]
+        btn_row1 = ttk.Frame(main)
+        btn_row1.grid(row=row, column=0, sticky="ew", pady=2)
+        self._build_button_row(btn_row1, row1_categories, F)
+        row += 1
 
-            for entry in items:
-                label = entry["label"]
-                frame = ttk.Frame(main)
-                frame.grid(row=row, column=0, sticky="ew", pady=1)
+        # 第二行: Waypoint, Test Tools
+        row2_categories = ["Waypoint", "Test Tools"]
+        btn_row2 = ttk.Frame(main)
+        btn_row2.grid(row=row, column=0, sticky="ew", pady=2)
+        self._build_button_row(btn_row2, row2_categories, F)
+        row += 1
 
-                btn = ttk.Button(
-                    frame, text=label, width=32,
-                    command=lambda l=label: self._launch(l),
-                )
-                btn.pack(side="left", padx=(0, 4))
+        ttk.Separator(main, orient="horizontal").grid(row=row, column=0, sticky="ew", pady=(8, 4))
+        row += 1
 
-                status = ttk.Label(frame, text="○", width=2)
-                status.pack(side="left")
+        # ── 下方区域：左配置 + 右日志 ──────────────────────────────
+        bottom = ttk.Frame(main)
+        bottom.grid(row=row, column=0, sticky="nsew")
 
-                kill_btn = ttk.Button(
-                    frame, text="✕", width=3,
-                    command=lambda l=label: self._kill(l),
-                )
-                kill_btn.pack(side="left", padx=(4, 0))
+        # 左侧配置面板（35%）
+        left_panel = ttk.Frame(bottom)
+        left_panel.pack(side="left", fill="both", padx=(0, 6))
 
-                entry["_status"] = status
-                row += 1
+        # 右侧输出日志（65%）
+        right_panel = ttk.Frame(bottom)
+        right_panel.pack(side="left", fill="both", expand=True)
 
-        # Map save row
-        map_frame = ttk.Frame(main)
-        map_frame.grid(row=row, column=0, sticky="ew", pady=(12, 2))
-        ttk.Label(map_frame, text="地图名称:", font=(F, 10)).pack(side="left")
-        self.map_name_entry = ttk.Entry(map_frame, width=20)
+        # ── 左侧：地图选择 ────────────────────────────────────────
+        ttk.Label(left_panel, text="定位地图", font=(F, 10, "bold")).pack(anchor="w", pady=(0, 4))
+
+        map_sel = ttk.Frame(left_panel)
+        map_sel.pack(fill="x", pady=1)
+        ttk.Label(map_sel, text="选择地图:", font=(F, 9)).pack(side="left")
+        self.map_combo = ttk.Combobox(map_sel, width=16, state="readonly")
+        self.map_combo.pack(side="left", padx=(4, 4))
+        self._load_map_list()
+        ttk.Button(map_sel, text="应用", command=self._apply_map).pack(side="left")
+
+        map_save = ttk.Frame(left_panel)
+        map_save.pack(fill="x", pady=1)
+        ttk.Label(map_save, text="地图名称:", font=(F, 9)).pack(side="left")
+        self.map_name_entry = ttk.Entry(map_save, width=16)
         self.map_name_entry.pack(side="left", padx=(4, 4))
         self.map_name_entry.insert(0, "my_map")
-        ttk.Button(map_frame, text="保存地图", command=self._save_map).pack(side="left")
-        row += 1
+        ttk.Button(map_save, text="保存", command=self._save_map).pack(side="left")
 
-        # Stop-all button
-        ttk.Button(main, text="全部停止", command=self._kill_all).grid(
-            row=row, column=0, sticky="e", pady=(12, 2)
-        )
-        row += 1
+        ttk.Separator(left_panel, orient="horizontal").pack(fill="x", pady=8)
 
-        # Output area with per-process tabs
-        ttk.Label(main, text="Output", font=(F, 10, "bold")).grid(
-            row=row, column=0, sticky="w", pady=(12, 2)
-        )
-        row += 1
+        # ── 左侧：速度控制 ────────────────────────────────────────
+        ttk.Label(left_panel, text="速度控制", font=(F, 10, "bold")).pack(anchor="w", pady=(0, 4))
 
-        self.notebook = ttk.Notebook(main)
-        self.notebook.grid(row=row, column=0, sticky="nsew")
+        self.vel_btn = ttk.Button(left_panel, text="开启控制", width=10,
+                                  command=self._toggle_vel_control)
+        self.vel_btn.pack(anchor="w", pady=(0, 8))
 
+        # 速度显示
+        vel_display = ttk.Frame(left_panel)
+        vel_display.pack(fill="x", pady=(0, 8))
+        self.vel_labels = []
+        vel_names = ["X:", "Y:", "Z:", "Yaw:"]
+        for i, name in enumerate(vel_names):
+            col = ttk.Frame(vel_display)
+            col.pack(side="left", expand=True)
+            ttk.Label(col, text=name, font=(F, 8)).pack()
+            lbl = ttk.Label(col, text="0.00", font=(F, 10, "bold"))
+            lbl.pack()
+            self.vel_labels.append(lbl)
+
+        # 速度按钮（2列4行网格）
+        vel_btns = ttk.Frame(left_panel)
+        vel_btns.pack(fill="x")
+        vel_axes = [
+            ("X+", 0, 1), ("X-", 0, -1),
+            ("Y+", 1, 1), ("Y-", 1, -1),
+            ("Z+", 2, 1), ("Z-", 2, -1),
+            ("Yaw+", 3, 1), ("Yaw-", 3, -1),
+        ]
+        for i, (text, axis, direction) in enumerate(vel_axes):
+            r, c = divmod(i, 2)
+            ttk.Button(vel_btns, text=text, width=6,
+                       command=lambda a=axis, d=direction: self._adjust_vel(a, d)).grid(
+                row=r, column=c, padx=1, pady=1, sticky="ew")
+        vel_btns.grid_columnconfigure(0, weight=1)
+        vel_btns.grid_columnconfigure(1, weight=1)
+
+        ttk.Button(left_panel, text="归零", command=self._zero_vel).pack(fill="x", pady=(4, 0))
+
+        # ── 右侧：输出日志 ────────────────────────────────────────
+        ttk.Label(right_panel, text="Output", font=(F, 10, "bold")).pack(anchor="w", pady=(0, 4))
+        self.notebook = ttk.Notebook(right_panel)
+        self.notebook.pack(fill="both", expand=True)
+
+        # ── 布局权重 ──────────────────────────────────────────────
         self.root.grid_rowconfigure(0, weight=1)
-        main.grid_rowconfigure(row, weight=1)
+        main.grid_rowconfigure(row, weight=1)  # bottom 行可扩展
         main.grid_columnconfigure(0, weight=1)
+        bottom.pack_propagate(True)
+
+    def _build_button_row(self, parent, categories, font):
+        """在 parent 中横向渲染指定分类的启动按钮。"""
+        first = True
+        for category in categories:
+            items = COMMANDS.get(category, [])
+            if not items:
+                continue
+            if not first:
+                ttk.Separator(parent, orient="vertical").pack(side="left", fill="y", padx=6)
+            first = False
+            ttk.Label(parent, text=category, font=(font, 9, "bold")).pack(side="left", padx=(0, 4))
+            for entry in items:
+                label = entry["label"]
+                btn_frame = ttk.Frame(parent)
+                btn_frame.pack(side="left", padx=1)
+                ttk.Button(btn_frame, text=label, width=14,
+                           command=lambda l=label: self._launch(l)).pack(side="left")
+                status = ttk.Label(btn_frame, text="○", width=1)
+                status.pack(side="left")
+                kill_btn = ttk.Button(btn_frame, text="✕", width=2,
+                                      command=lambda l=label: self._kill(l))
+                kill_btn.pack(side="left")
+                entry["_status"] = status
+
 
 
 if __name__ == "__main__":
