@@ -83,6 +83,8 @@ private:
 
     void Action_NotifyUavSwitchVideoMode();
     void Action_NotifyUavSwitchPhotoMode();
+
+    void Action_SetGimbalAngle();
 };
 
 #endif //STATE_MACHINE_H

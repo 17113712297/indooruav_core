@@ -52,6 +52,9 @@ CheckBeforeTakeOff
 TakeOff
   --TakeoffComplete--> Cruise
   --call action-->     notify_uav_open_light
+  --call action-->     notify_uav_switch_video_mode
+  --call action-->     notify_uav_video_recording_start
+  --call action-->     set_gimbal_angle
   --call action-->     cruise
 
 Cruise
@@ -149,6 +152,9 @@ Charge
 | `Cruise -> DataCollection` | `notify_uav_video_recording_start` | `indooruav_controller/controller_hardware/camera_video_start` |
 | `DataCollection -> Cruise` | `notify_uav_video_recording_stop` | `indooruav_controller/controller_hardware/camera_video_stop` |
 | `TakeOff -> Cruise` | `notify_uav_open_light` | `indooruav_controller/controller_hardware/light_open` |
+| `TakeOff -> Cruise` | `notify_uav_switch_video_mode` | `indooruav_controller/controller_hardware/camera_mode_video` |
+| `TakeOff -> Cruise` | `notify_uav_video_recording_start` | `indooruav_controller/controller_hardware/camera_video_start` |
+| `TakeOff -> Cruise` | `set_gimbal_angle` | `indooruav_controller/controller_hardware/gimbal_angle` |
 | `Land -> Charge` | `notify_uav_close_light` | `indooruav_controller/controller_hardware/light_close` |
 
 ## 参数说明
@@ -183,6 +189,15 @@ indooruav_core:
     notify_uav_close_light: "indooruav_controller/controller_hardware/light_close"
     notify_uav_video_recording_start: "indooruav_controller/controller_hardware/camera_video_start"
     notify_uav_video_recording_stop: "indooruav_controller/controller_hardware/camera_video_stop"
+    set_gimbal_angle: "indooruav_controller/controller_hardware/gimbal_angle"
+
+    # 起飞完成后设置云台角度的参数
+    gimbal_angle_after_takeoff:
+      mode: 0          # 0=绝对角度, 1=相对角度
+      pitch: -60.0     # 俯仰角，单位：度
+      roll: 0.0        # 横滚角，单位：度
+      yaw: 0.0         # 偏航角，单位：度
+      duration: 3.0    # 云台运动时间，单位：秒（必须 > 0）
 ```
 
 其中：
@@ -196,6 +211,13 @@ indooruav_core:
 - 当 `wait_timeout_sec > 0` 时，调用动作服务前会等待服务出现。
 - 当 `wait_timeout_sec <= 0` 时，不等待，直接按 `client.exists()` 检查。
 - 如果该参数被配置为负数，代码会回退到默认值 `1.0` 秒。
+- `gimbal_angle_after_takeoff` 参数用于起飞完成后自动设置云台角度：
+  - `mode`：云台角度模式，`0` 为绝对角度（默认），`1` 为相对角度。非法值会回退到 `0`。
+  - `pitch`：俯仰角，单位为度，默认 `-60.0`。
+  - `roll`：横滚角，单位为度，默认 `0.0`。
+  - `yaw`：偏航角，单位为度，默认 `0.0`。
+  - `duration`：云台运动到目标角度所需时间，单位为秒，默认 `3.0`。必须大于 `0`，否则回退到默认值。
+  - `set_gimbal_angle` 动作服务使用的类型为 `indooruav_msgs/GimbalAngle`，与其他 `std_srvs/Empty` 类型的动作服务不同。
 
 ### 测试节点私有参数
 

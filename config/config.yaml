@@ -22,6 +22,7 @@ indooruav_core:
     takeoff: "indooruav_controller/controller_hardware/takeoff"
     cruise: "indooruav_controller/waypoint_tracker/start"
     land: "indooruav_controller/controller_hardware/vision_landing"
+    set_gimbal_angle: "indooruav_controller/controller_hardware/gimbal_angle"
     charge: "indooruav_core/action/charge"
     data_collection: "indooruav_core/action/data_collection"
     notify_http_post_land_workflow: "indooruav_http/run_post_land_workflow"

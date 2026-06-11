@@ -41,6 +41,10 @@ public:
 
     // 请求无人机切换到拍照模式
     bool Call_Action_NotifyUavSwitchPhotoMode();
+
+    // 请求设置云台角度
+    bool Call_Action_SetGimbalAngle();
+
 private:
     void LoadParameters();
     void InitializeClients();
@@ -61,6 +65,7 @@ private:
     std::string action_notify_uav_video_recording_stop_service_name_;
     std::string action_notify_uav_switch_video_mode_service_name_;
     std::string action_notify_uav_switch_photo_mode_service_name_;
+    std::string action_set_gimbal_angle_service_name_;
     double action_service_wait_timeout_sec_; 
 
     ros::NodeHandle nh_;
@@ -79,6 +84,7 @@ private:
     ros::ServiceClient action_notify_uav_video_recording_stop_client_;
     ros::ServiceClient action_notify_uav_switch_video_mode_client_;
     ros::ServiceClient action_notify_uav_switch_photo_mode_client_;
+    ros::ServiceClient action_set_gimbal_angle_client_;
 };
 
 

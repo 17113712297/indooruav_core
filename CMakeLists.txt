@@ -12,6 +12,7 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   std_srvs
   std_msgs
+  indooruav_msgs
 )
 
 ## System dependencies are found with CMake's conventions
@@ -99,7 +100,7 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES ${PROJECT_NAME}
-  CATKIN_DEPENDS roscpp rospy std_srvs std_msgs
+  CATKIN_DEPENDS roscpp rospy std_srvs std_msgs indooruav_msgs
 #  DEPENDS system_lib
 )
 

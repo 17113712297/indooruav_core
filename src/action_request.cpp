@@ -1,6 +1,7 @@
 #include "indooruav_core/action_request.h"
 
 #include <std_srvs/Empty.h>
+#include <indooruav_msgs/GimbalAngle.h>
 
 namespace {
 constexpr double kDefaultActionServiceWaitTimeoutSec = 1.0;
@@ -62,6 +63,9 @@ void ActionRequester::LoadParameters() {
     nh_.param<std::string>("/indooruav_core/action/notify_uav_switch_photo_mode",
                            action_notify_uav_switch_photo_mode_service_name_,
                            "indooruav_controller/controller_hardware/camera_mode_photo");
+    nh_.param<std::string>("/indooruav_core/action/set_gimbal_angle",
+                           action_set_gimbal_angle_service_name_,
+                           "indooruav_controller/controller_hardware/gimbal_angle");
     nh_.param<double>("/indooruav_core/action/wait_timeout_sec",
                       action_service_wait_timeout_sec_,
                       kDefaultActionServiceWaitTimeoutSec);
@@ -106,6 +110,8 @@ void ActionRequester::InitializeClients() {
         nh_.serviceClient<std_srvs::Empty>(action_notify_uav_switch_video_mode_service_name_);
     action_notify_uav_switch_photo_mode_client_ =
         nh_.serviceClient<std_srvs::Empty>(action_notify_uav_switch_photo_mode_service_name_);
+    action_set_gimbal_angle_client_ =
+        nh_.serviceClient<indooruav_msgs::GimbalAngle>(action_set_gimbal_angle_service_name_);
 }
 
 bool ActionRequester::Call_Action_Await() {
@@ -174,6 +180,70 @@ bool ActionRequester::Call_Action_NotifyUavSwitchVideoMode()
 bool ActionRequester::Call_Action_NotifyUavSwitchPhotoMode()
 {
     return CallActionService(action_notify_uav_switch_photo_mode_client_, action_notify_uav_switch_photo_mode_service_name_);
+}
+
+bool ActionRequester::Call_Action_SetGimbalAngle() {
+    ROS_INFO("Calling action service: [%s]", action_set_gimbal_angle_service_name_.c_str());
+
+    const bool service_exists =
+        action_service_wait_timeout_sec_ > 0.0
+        ? action_set_gimbal_angle_client_.waitForExistence(
+            ros::Duration(action_service_wait_timeout_sec_))
+        : action_set_gimbal_angle_client_.exists();
+
+    if (!service_exists) {
+        ROS_WARN_STREAM_THROTTLE(kServiceLogThrottleSec,
+                                 "Action service [" << action_set_gimbal_angle_service_name_
+                                 << "] is not available. wait_timeout_sec="
+                                 << action_service_wait_timeout_sec_);
+        return false;
+    }
+
+    indooruav_msgs::GimbalAngle srv;
+
+    // 从参数服务器读取配置，默认值为需求指定的参数
+    int mode = 0;  // ABSOLUTE
+    nh_.param<int>("/indooruav_core/action/gimbal_angle_after_takeoff/mode", mode, 0);
+    if (mode != 0 && mode != 1) {
+        ROS_WARN("Invalid gimbal mode=%d, using default mode=0 (ABSOLUTE)", mode);
+        mode = 0;
+    }
+    srv.request.mode = static_cast<uint8_t>(mode);
+
+    float pitch = -60.0f;
+    nh_.param<float>("/indooruav_core/action/gimbal_angle_after_takeoff/pitch",
+                     pitch, -60.0f);
+    srv.request.pitch = pitch;
+
+    float roll = 0.0f;
+    nh_.param<float>("/indooruav_core/action/gimbal_angle_after_takeoff/roll",
+                     roll, 0.0f);
+    srv.request.roll = roll;
+
+    float yaw = 0.0f;
+    nh_.param<float>("/indooruav_core/action/gimbal_angle_after_takeoff/yaw",
+                     yaw, 0.0f);
+    srv.request.yaw = yaw;
+
+    float duration = 3.0f;
+    nh_.param<float>("/indooruav_core/action/gimbal_angle_after_takeoff/duration",
+                     duration, 3.0f);
+    if (duration <= 0.0f) {
+        ROS_WARN("Invalid gimbal duration=%.1f (must be > 0), using default duration=3.0", duration);
+        duration = 3.0f;
+    }
+    srv.request.duration = duration;
+
+    if (!action_set_gimbal_angle_client_.call(srv)) {
+        ROS_ERROR_STREAM_THROTTLE(kServiceLogThrottleSec,
+                                  "Failed to call action service ["
+                                  << action_set_gimbal_angle_service_name_ << "].");
+        return false;
+    }
+
+    ROS_INFO("Gimbal angle set: mode=%d pitch=%.1f roll=%.1f yaw=%.1f duration=%.1f",
+             mode, pitch, roll, yaw, duration);
+    return true;
 }
 
 bool ActionRequester::CallActionService(ros::ServiceClient &client, const std::string &service_name)

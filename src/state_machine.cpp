@@ -67,6 +67,7 @@ void IndooruavStateMachine::Handle_TakeOff(Event event)
             Action_NotifyUavOpenLight();
             Action_NotifyUavSwitchVideoMode();
             Action_NotifyUavVideoRecordingStart();
+            Action_SetGimbalAngle();  // 新增：起飞后设置云台角度
             Action_Cruise();
             break;
         default:
@@ -212,4 +213,9 @@ void IndooruavStateMachine::Action_NotifyUavSwitchVideoMode()
 void IndooruavStateMachine::Action_NotifyUavSwitchPhotoMode()
 {
     action_request_.Call_Action_NotifyUavSwitchPhotoMode();
+}
+
+void IndooruavStateMachine::Action_SetGimbalAngle()
+{
+    action_request_.Call_Action_SetGimbalAngle();
 }

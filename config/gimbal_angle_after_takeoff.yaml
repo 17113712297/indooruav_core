@@ -1,0 +1,16 @@
+# 起飞后云台角度配置
+#
+# 使用方法：在 launch 文件中添加以下行来加载此配置：
+#   <rosparam command="load" file="$(find indooruav_core)/config/gimbal_angle_after_takeoff.yaml" />
+#
+# 或将本文件内容合并到 config.yaml 中的 action 节点下。
+# 加载后，状态机在起飞完成后会自动读取 gimbal_angle_after_takeoff 中的参数并控制云台转动到指定角度。
+indooruav_core:
+  action:
+    set_gimbal_angle: "indooruav_controller/controller_hardware/gimbal_angle"
+    gimbal_angle_after_takeoff:
+      mode: 0        # 0=ABSOLUTE, 1=RELATIVE
+      pitch: -60.0   # 向下 60°
+      roll: 0.0
+      yaw: 0.0
+      duration: 3.0  # 3 秒完成转动
