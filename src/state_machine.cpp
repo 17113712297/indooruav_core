@@ -116,7 +116,7 @@ void IndooruavStateMachine::Handle_Land(Event event)
 {
     switch (event) {
         case Event::LandComplete:
-            state_ = State::Charge;
+            state_ = State::Await;
             Action_NotifyUavCloseLight(); //降落完成后，关闭补光灯
             // 这里在“降落完成并切入 Charge”时触发前端回传流程。
             // 该流程由 http 功能包异步执行，不阻塞状态机继续执行后续动作。
