@@ -49,9 +49,10 @@ class IndooruavStateMachine {
 
 public:
     IndooruavStateMachine() : state_(State::Await) {}
-    void HandleEvent(Event event); 
+    void HandleEvent(Event event);
+    State GetState() const { return state_; }
 
-private:    
+private:
     State state_;
     ActionRequester action_request_;
 

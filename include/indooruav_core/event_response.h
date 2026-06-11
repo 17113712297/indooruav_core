@@ -3,6 +3,7 @@
 
 #include <string>
 #include <ros/ros.h>
+#include <std_msgs/String.h>
 #include <std_srvs/Empty.h>
 #include <indooruav_core/state_machine.h>
 
@@ -28,6 +29,7 @@ private:
 
 private:
     IndooruavStateMachine state_machine_;
+    void PublishState();
 
     std::string event_takeoff_command_service_name_;
     std::string event_check_passed_service_name_;
@@ -40,6 +42,7 @@ private:
     std::string event_check_failed_service_name_;
 
     ros::NodeHandle nh_;
+    ros::Publisher state_pub_;
     ros::ServiceServer event_takeoff_command_server_;
     ros::ServiceServer event_check_passed_server_;
     ros::ServiceServer event_takeoff_complete_server_;

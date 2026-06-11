@@ -1,9 +1,11 @@
 #include "indooruav_core/event_response.h"
 #include "indooruav_core/event.h"
+#include "indooruav_core/state_machine.h"
 
 EventResponder::EventResponder() {
     LoadParameters();
     InitializeServers();
+    PublishState();  // Publish initial state (Await)
 }
 
 EventResponder::~EventResponder() {
@@ -41,6 +43,9 @@ void EventResponder::LoadParameters() {
 }
 
 void EventResponder::InitializeServers() {
+    state_pub_ = nh_.advertise<std_msgs::String>(
+        "/indooruav_core/state_machine/state", 1, true);
+
     event_takeoff_command_server_ =
         nh_.advertiseService(event_takeoff_command_service_name_,
                              &EventResponder::HandleTakeoffCommand,
@@ -85,6 +90,7 @@ bool EventResponder::HandleTakeoffCommand(std_srvs::Empty::Request& request,
     (void)response;
     // TODO: implement takeoff command event handling.
     state_machine_.HandleEvent(Event::TakeoffCommand);
+    PublishState();
     return true;
 }
 
@@ -94,6 +100,7 @@ bool EventResponder::HandleCheckPassed(std_srvs::Empty::Request& request,
     (void)response;
     // TODO: implement check passed event handling.
     state_machine_.HandleEvent(Event::CheckPassed);
+    PublishState();
     return true;
 }
 
@@ -103,6 +110,7 @@ bool EventResponder::HandleTakeoffComplete(std_srvs::Empty::Request& request,
     (void)response;
     // TODO: implement takeoff complete event handling.
     state_machine_.HandleEvent(Event::TakeoffComplete);
+    PublishState();
     return true;
 }
 
@@ -112,6 +120,7 @@ bool EventResponder::HandleCruiseComplete(std_srvs::Empty::Request& request,
     (void)response;
     // TODO: implement cruise complete event handling.
     state_machine_.HandleEvent(Event::CruiseComplete);
+    PublishState();
     return true;
 }
 
@@ -121,6 +130,7 @@ bool EventResponder::HandleLandComplete(std_srvs::Empty::Request& request,
     (void)response;
     // TODO: implement land complete event handling.
     state_machine_.HandleEvent(Event::LandComplete);
+    PublishState();
     return true;
 }
 
@@ -130,6 +140,7 @@ bool EventResponder::HandleChargeComplete(std_srvs::Empty::Request& request,
     (void)response;
     // TODO: implement charge complete event handling.
     state_machine_.HandleEvent(Event::ChargeComplete);
+    PublishState();
     return true;
 }
 
@@ -139,6 +150,7 @@ bool EventResponder::HandleDataCollectionStart(std_srvs::Empty::Request& request
     (void)response;
     // TODO: implement data collection start event handling.
     state_machine_.HandleEvent(Event::DataCollectionStart);
+    PublishState();
     return true;
 }
 
@@ -148,6 +160,7 @@ bool EventResponder::HandleDataCollectionComplete(std_srvs::Empty::Request& requ
     (void)response;
     // TODO: implement data collection complete event handling.
     state_machine_.HandleEvent(Event::DataCollectionComplete);
+    PublishState();
     return true;
 }
 
@@ -156,5 +169,12 @@ bool EventResponder::HandleCheckFailed(std_srvs::Empty::Request& request,
     (void)request;
     (void)response;
     state_machine_.HandleEvent(Event::CheckFailed);
+    PublishState();
     return true;
+}
+
+void EventResponder::PublishState() {
+    std_msgs::String msg;
+    msg.data = ToString(state_machine_.GetState());
+    state_pub_.publish(msg);
 }
