@@ -60,6 +60,35 @@ COMMANDS = {
 }
 
 # ============================================================
+# Visual theme — colors are display-only and do not affect logic
+# ============================================================
+
+
+class Palette:
+    BG         = "#eef1f6"   # window background
+    SURFACE    = "#f7f9fc"   # light surfaces
+    BORDER     = "#d7dde6"
+    TEXT       = "#2c3e50"
+    SUBTLE     = "#7a8794"
+    ACCENT     = "#3a7bd5"
+    ACCENT_D   = "#2c5fa8"
+    SUCCESS    = "#27ae60"
+    SUCCESS_D  = "#1e8b4d"
+    DANGER     = "#e74c3c"
+    DANGER_D   = "#c0392b"
+    WARNING    = "#e67e22"
+    IDLE       = "#a9b3bf"
+    CHIP_BG    = "#e5eaf1"
+    CONSOLE_BG = "#fbfcfe"
+    CONSOLE_FG = "#2c3e50"
+
+
+# Status glyphs / colors for the per-command indicator (display only)
+STATUS_IDLE    = ("●", Palette.IDLE)
+STATUS_RUNNING = ("●", Palette.SUCCESS)
+STATUS_ERROR   = ("●", Palette.DANGER)
+
+# ============================================================
 
 # ANSI escape sequence patterns (same logic as the sed filter in shell scripts)
 _ANSI_RE = re.compile(r"\x1b\[[0-9;]*[a-zA-Z]|\x1b\][^\x07]*\x07")
@@ -107,15 +136,105 @@ class RosLauncher:
         default_font = (cjk_font, 10)
         bold_font = (cjk_font, 10, "bold")
         self.root.option_add("*Font", default_font)
-        style = ttk.Style()
-        style.configure(".", font=default_font)
-        style.configure("Bold.TLabel", font=bold_font)
+        self._setup_styles(default_font, bold_font)
+        self.root.configure(bg=Palette.BG)
 
         self._build_ui()
         self._start_roscore()
 
         # Ensure roscore is cleaned up on exit
         self.root.protocol("WM_DELETE_WINDOW", self._on_close)
+
+    # ------------------------------------------------------------------
+    # Theming (visual only)
+    # ------------------------------------------------------------------
+
+    def _setup_styles(self, default_font, bold_font):
+        """Configure ttk styles for a clean, modern look. Display-only."""
+        P = Palette
+        style = ttk.Style()
+        try:
+            style.theme_use("clam")
+        except tk.TclError:
+            pass
+
+        # Combobox popdown list colors
+        self.root.option_add("*TCombobox*Listbox.background", P.CONSOLE_BG)
+        self.root.option_add("*TCombobox*Listbox.foreground", P.TEXT)
+        self.root.option_add("*TCombobox*Listbox.selectBackground", P.ACCENT)
+        self.root.option_add("*TCombobox*Listbox.selectForeground", "white")
+
+        style.configure(".", background=P.BG, foreground=P.TEXT, font=default_font)
+        style.configure("TFrame", background=P.BG)
+        style.configure("TLabel", background=P.BG, foreground=P.TEXT)
+        style.configure("Subtle.TLabel", background=P.BG, foreground=P.SUBTLE)
+        style.configure("Header.TLabel", background=P.BG, foreground=P.ACCENT, font=bold_font)
+        style.configure("Title.TLabel", background=P.BG, foreground=P.TEXT)
+        style.configure("Bold.TLabel", font=bold_font)
+        style.configure("TSeparator", background=P.BORDER)
+
+        # Inputs
+        style.configure("TEntry", fieldbackground="white", bordercolor=P.BORDER,
+                        relief="flat", padding=3)
+        style.configure("TCombobox", fieldbackground="white", background="white",
+                        bordercolor=P.BORDER, arrowcolor=P.TEXT, padding=3)
+        style.map("TCombobox", fieldbackground=[("readonly", "white")])
+
+        # ---- 3D buttons ----------------------------------------------
+        # clam draws a bevel from lightcolor (top-left) + darkcolor (bottom-right);
+        # raised relief + a 3px border gives depth, and on press we invert the
+        # bevel and sink the relief so the button visibly depresses.
+        def _bevel(name, base, light, dark, border, fg="white",
+                   pad=(11, 6), bw=3):
+            style.configure(name, padding=pad, relief="raised", borderwidth=bw,
+                            background=base, foreground=fg,
+                            bordercolor=border, lightcolor=light, darkcolor=dark,
+                            focuscolor=base)
+            style.map(
+                name,
+                background=[("pressed", dark), ("active", light),
+                            ("disabled", "#d9dee6")],
+                foreground=[("disabled", P.SUBTLE)],
+                relief=[("pressed", "sunken"), ("!pressed", "raised")],
+                lightcolor=[("pressed", dark)],
+                darkcolor=[("pressed", light)],
+            )
+
+        # Base neutral button
+        _bevel("TButton", "#e3e8f0", "#ffffff", "#aeb8c8", "#aeb8c8", fg=P.TEXT)
+        # Accent button
+        _bevel("Accent.TButton", P.ACCENT, "#6aa1ec", "#23538f", P.ACCENT_D)
+        # Success button
+        _bevel("Success.TButton", P.SUCCESS, "#45d07f", "#1b7a45", P.SUCCESS_D)
+        # Danger button
+        _bevel("Danger.TButton", P.DANGER, "#f2715f", "#b32a1d", P.DANGER_D)
+        # Small kill button (compact)
+        _bevel("Kill.TButton", "#efd1cc", "#ffffff", "#d6aaa3",
+               "#d6aaa3", fg=P.DANGER_D, pad=(2, 2), bw=2)
+
+        # Stdin bar frame
+        style.configure("Stdin.TFrame", background=P.SURFACE)
+
+        # Notebook
+        style.configure("TNotebook", background=P.BG, borderwidth=0, tabmargins=(2, 4, 2, 0))
+        style.configure("TNotebook.Tab", padding=(14, 6), background=P.CHIP_BG,
+                        foreground=P.SUBTLE, borderwidth=0)
+        style.map("TNotebook.Tab",
+                  background=[("selected", P.CONSOLE_BG)],
+                  foreground=[("selected", P.TEXT)],
+                  expand=[("selected", (1, 1, 1, 0))])
+
+    def _section_header(self, parent, text):
+        """A small accent bar + bold title used to head each config block."""
+        head = ttk.Frame(parent)
+        head.pack(fill="x", pady=(0, 4))
+        bar = tk.Frame(head, width=4, height=16, bg=Palette.ACCENT)
+        bar.pack(side="left", padx=(0, 6))
+        bar.pack_propagate(False)
+        ttk.Label(head, text=text, style="Header.TLabel").pack(side="left")
+        return head
+
+    # ------------------------------------------------------------------
 
     def _start_roscore(self):
         """Check if roscore is already running; start it if not."""
@@ -128,6 +247,7 @@ class RosLauncher:
             s = socket.create_connection((host, port), timeout=1)
             s.close()
             self._dbg("[DEBUG] ROS master already running, skip roscore")
+            self._update_roscore_status()
             return
         except Exception:
             pass
@@ -152,12 +272,13 @@ class RosLauncher:
         except Exception as e:
             self._dbg(f"[DEBUG] Failed to start roscore: {e}")
             self.roscore_proc = None
+        self._update_roscore_status()
 
     def _update_roscore_status(self):
         if self.roscore_proc and self.roscore_proc.poll() is None:
-            self.roscore_status.config(text="● running", foreground="green")
+            self.roscore_status.config(text="● running", foreground=Palette.SUCCESS)
         else:
-            self.roscore_status.config(text="○ not running", foreground="gray")
+            self.roscore_status.config(text="○ not running", foreground=Palette.SUBTLE)
 
     def _on_close(self):
         """Clean up all processes, gazebo, and roscore on window close."""
@@ -185,6 +306,56 @@ class RosLauncher:
         print(msg, file=sys.stderr, flush=True)
         self._log(msg)
 
+    def _style_console(self, text):
+        """Apply console colors and log-level tags to a ScrolledText (display only)."""
+        try:
+            text.configure(background=Palette.CONSOLE_BG, foreground=Palette.CONSOLE_FG,
+                           insertbackground=Palette.TEXT, borderwidth=0,
+                           highlightthickness=0, padx=8, pady=6,
+                           selectbackground=Palette.ACCENT, selectforeground="white")
+        except tk.TclError:
+            pass
+        text.tag_config("err", foreground=Palette.DANGER)
+        text.tag_config("warn", foreground=Palette.WARNING)
+        text.tag_config("ok", foreground=Palette.SUCCESS)
+        text.tag_config("info", foreground=Palette.ACCENT)
+        text.tag_config("muted", foreground=Palette.SUBTLE)
+
+    @staticmethod
+    def _pick_log_tag(msg):
+        """Choose a color tag for a log line based on its prefix (display only)."""
+        if "[ERR" in msg:
+            return "err"
+        if "[WARN" in msg or "[KILL]" in msg:
+            return "warn"
+        if "[DEBUG]" in msg:
+            return "muted"
+        if "[RUN]" in msg or "[DONE]" in msg:
+            return "ok"
+        if msg.startswith(">"):
+            return "info"
+        if any(k in msg for k in ("[SAVE]", "[MAP]", "[WP]", "[REC]", "[GIMBAL]", "[VEL]")):
+            return "info"
+        return ""
+
+    def _create_stdin_bar(self, frame, label, before=None):
+        """Create the interactive stdin input bar inside a tab frame."""
+        stdin_frame = ttk.Frame(frame, style="Stdin.TFrame", padding=(4, 3))
+        pack_opts = dict(fill="x", side="bottom", padx=2, pady=(2, 2))
+        if before is not None:
+            pack_opts["before"] = before
+        stdin_frame.pack(**pack_opts)
+        ttk.Label(stdin_frame, text=" ›", style="Subtle.TLabel").pack(side="left")
+        entry = ttk.Entry(stdin_frame)
+        entry.pack(side="left", fill="x", expand=True, padx=4)
+        send_btn = ttk.Button(
+            stdin_frame, text="Send", width=6, style="Accent.TButton",
+            command=lambda: self._send_stdin(label),
+        )
+        send_btn.pack(side="left", padx=2)
+        entry.bind("<Return>", lambda e: self._send_stdin(label))
+        self.stdin_entries[label] = (entry, send_btn)
+
     def _get_output(self, label, with_stdin=False):
         """Return the ScrolledText for a given process label, creating a tab if needed."""
         if label not in self.outputs:
@@ -192,22 +363,12 @@ class RosLauncher:
 
             # Pack stdin bar first so it claims space before the expanded text widget
             if with_stdin:
-                stdin_frame = ttk.Frame(frame, relief="sunken", borderwidth=1)
-                stdin_frame.pack(fill="x", side="bottom", padx=2, pady=(2, 2))
-                ttk.Label(stdin_frame, text=" >").pack(side="left")
-                entry = ttk.Entry(stdin_frame)
-                entry.pack(side="left", fill="x", expand=True, padx=2)
-                send_btn = ttk.Button(
-                    stdin_frame, text="Send", width=5,
-                    command=lambda: self._send_stdin(label),
-                )
-                send_btn.pack(side="left", padx=2)
-                entry.bind("<Return>", lambda e: self._send_stdin(label))
-                self.stdin_entries[label] = (entry, send_btn)
+                self._create_stdin_bar(frame, label)
                 self._dbg(f"[DEBUG] Stdin bar added for '{label}'")
 
             text = scrolledtext.ScrolledText(frame, state="normal", wrap="word",
                                               font=(self._cjk_font, 10))
+            self._style_console(text)
             # Block editing (printable chars, backspace, delete, enter) but allow Ctrl+C/Ins/etc
             def _block_edit(e):
                 if e.keysym and len(e.keysym) == 1 and e.state == 0:
@@ -226,18 +387,7 @@ class RosLauncher:
             self._dbg(f"[DEBUG] Late-adding stdin bar for '{label}'")
             text = self.outputs[label]
             frame = text.master  # parent of ScrolledText is the tab frame
-            stdin_frame = ttk.Frame(frame, relief="sunken", borderwidth=1)
-            stdin_frame.pack(fill="x", side="bottom", padx=2, pady=(2, 2), before=text)
-            ttk.Label(stdin_frame, text=" >").pack(side="left")
-            entry = ttk.Entry(stdin_frame)
-            entry.pack(side="left", fill="x", expand=True, padx=2)
-            send_btn = ttk.Button(
-                stdin_frame, text="Send", width=5,
-                command=lambda: self._send_stdin(label),
-            )
-            send_btn.pack(side="left", padx=2)
-            entry.bind("<Return>", lambda e: self._send_stdin(label))
-            self.stdin_entries[label] = (entry, send_btn)
+            self._create_stdin_bar(frame, label, before=text)
 
         return self.outputs[label]
 
@@ -279,6 +429,12 @@ class RosLauncher:
                     return e
         return None
 
+    def _set_status(self, entry, status):
+        """Update a command's status indicator (glyph, color)."""
+        if entry and "_status" in entry:
+            glyph, color = status
+            entry["_status"].config(text=glyph, foreground=color)
+
     def _launch(self, label):
         self._dbg(f"[DEBUG] _launch('{label}') called")
         entry = self._find_entry(label)
@@ -303,7 +459,7 @@ class RosLauncher:
 
         self._dbg(f"[DEBUG] _launch: launching {' '.join(cmd)}")
         self._log(f"[RUN] {' '.join(cmd)}", label=label)
-        entry["_status"].config(text="◉", foreground="green")
+        self._set_status(entry, STATUS_RUNNING)
         self.root.update_idletasks()
 
         try:
@@ -331,7 +487,7 @@ class RosLauncher:
                 remaining = proc.stdout.read()
                 if remaining:
                     self._dbg(f"[DEBUG] Remaining stdout: {remaining[:500]}")
-                entry["_status"].config(text="✗", foreground="red")
+                self._set_status(entry, STATUS_ERROR)
                 self.processes.pop(label, None)
             else:
                 self._dbg(f"[DEBUG] Process {label} still alive after 0.5s")
@@ -339,7 +495,7 @@ class RosLauncher:
             self._dbg(f"[DEBUG] Exception in _launch: {e}")
             traceback.print_exc(file=sys.stderr)
             self._log(f"[ERR] Failed to start: {e}", label=label)
-            entry["_status"].config(text="✗", foreground="red")
+            self._set_status(entry, STATUS_ERROR)
 
     def _kill(self, label):
         self._dbg(f"[DEBUG] _kill('{label}') called")
@@ -370,8 +526,7 @@ class RosLauncher:
         if label == "启动仿真控制":
             self._kill_gazebo()
 
-        if entry:
-            entry["_status"].config(text="○", foreground="black")
+        self._set_status(entry, STATUS_IDLE)
 
     def _kill_gazebo(self):
         """Kill stray gzserver / gzclient processes that roslaunch doesn't manage."""
@@ -595,10 +750,10 @@ class RosLauncher:
         current_state = msg.data
         for name, lbl in self.state_labels.items():
             if name == current_state:
-                lbl.config(foreground="white", background="#27ae60",
+                lbl.config(foreground="white", background=Palette.SUCCESS,
                            font=(self._cjk_font, 9, "bold"))
             else:
-                lbl.config(foreground="black", background="#f0f0f0",
+                lbl.config(foreground=Palette.SUBTLE, background=Palette.CHIP_BG,
                            font=(self._cjk_font, 9))
 
     # ------------------------------------------------------------------
@@ -627,7 +782,7 @@ class RosLauncher:
                 return
             self.vel_enabled = True
             self.vel_running = True
-            self.vel_btn.config(text="关闭控制")
+            self.vel_btn.config(text="关闭控制", style="Danger.TButton")
             self._log("[VEL] 速度控制已开启", label="System")
 
             # Start publisher thread
@@ -639,7 +794,7 @@ class RosLauncher:
             # Keep publishing zero for a short time before stopping thread
             time.sleep(0.5)
             self.vel_running = False
-            self.vel_btn.config(text="开启控制")
+            self.vel_btn.config(text="开启控制", style="Success.TButton")
             self._log("[VEL] 速度控制已关闭", label="System")
 
     def _vel_pub_loop(self):
@@ -672,7 +827,9 @@ class RosLauncher:
     def _update_vel_display(self):
         """Update velocity display labels."""
         for i, lbl in enumerate(self.vel_labels):
-            lbl.config(text=f"{self.vel_values[i]:+.2f}")
+            val = self.vel_values[i]
+            color = Palette.SUCCESS if val > 0 else (Palette.DANGER if val < 0 else Palette.TEXT)
+            lbl.config(text=f"{val:+.2f}", foreground=color)
 
     def _kill_all(self):
         for label in list(self.processes.keys()):
@@ -685,7 +842,7 @@ class RosLauncher:
                 if line:
                     self._log(_strip_ansi(line.rstrip()), label=label)
             self._dbg(f"[DEBUG] Reader thread for '{label}': stdout closed, rc={proc.returncode}")
-            entry["_status"].config(text="○", foreground="black")
+            self._set_status(entry, STATUS_IDLE)
             self.processes.pop(label, None)
             self._log(f"[DONE] (exit {proc.returncode})", label=label)
 
@@ -718,12 +875,12 @@ class RosLauncher:
         # Check if user is at the bottom before inserting
         view = output.yview()
         at_bottom = view[1] >= 0.99
-        output.insert("end", msg + "\n")
+        output.insert("end", msg + "\n", self._pick_log_tag(msg))
         if at_bottom:
             output.see("end")
 
     def _build_ui(self):
-        main = ttk.Frame(self.root, padding=10)
+        main = ttk.Frame(self.root, padding=12)
         main.grid(row=0, column=0, sticky="nsew")
 
         F = self._cjk_font
@@ -731,33 +888,38 @@ class RosLauncher:
 
         # ── 顶部状态栏 ──────────────────────────────────────────────
         top_bar = ttk.Frame(main)
-        top_bar.grid(row=row, column=0, sticky="ew", pady=(0, 8))
-        ttk.Label(top_bar, text="ROS Launch Manager", font=(F, 12, "bold")).pack(side="left")
+        top_bar.grid(row=row, column=0, sticky="ew", pady=(0, 10))
+        accent_bar = tk.Frame(top_bar, width=5, height=22, bg=Palette.ACCENT)
+        accent_bar.pack(side="left", padx=(0, 8))
+        accent_bar.pack_propagate(False)
+        ttk.Label(top_bar, text="ROS Launch Manager", style="Title.TLabel",
+                  font=(F, 14, "bold")).pack(side="left")
         self.roscore_status = ttk.Label(top_bar, text="", font=(F, 9))
-        self.roscore_status.pack(side="left", padx=(12, 0))
+        self.roscore_status.pack(side="left", padx=(14, 0))
         self._update_roscore_status()
-        ttk.Button(top_bar, text="全部停止", command=self._kill_all).pack(side="right")
+        ttk.Button(top_bar, text="全部停止", style="Danger.TButton",
+                   command=self._kill_all).pack(side="right")
         row += 1
 
-        ttk.Separator(main, orient="horizontal").grid(row=row, column=0, sticky="ew", pady=(0, 4))
+        ttk.Separator(main, orient="horizontal").grid(row=row, column=0, sticky="ew", pady=(0, 6))
         row += 1
 
         # ── 启动按钮区域（按行分组）────────────────────────────────
         # 第一行: Core, Controller, SLAM
         row1_categories = ["Core", "Controller", "SLAM"]
         btn_row1 = ttk.Frame(main)
-        btn_row1.grid(row=row, column=0, sticky="ew", pady=2)
+        btn_row1.grid(row=row, column=0, sticky="ew", pady=3)
         self._build_button_row(btn_row1, row1_categories, F)
         row += 1
 
         # 第二行: Waypoint, Test Tools
         row2_categories = ["Waypoint", "Test Tools"]
         btn_row2 = ttk.Frame(main)
-        btn_row2.grid(row=row, column=0, sticky="ew", pady=2)
+        btn_row2.grid(row=row, column=0, sticky="ew", pady=3)
         self._build_button_row(btn_row2, row2_categories, F)
         row += 1
 
-        ttk.Separator(main, orient="horizontal").grid(row=row, column=0, sticky="ew", pady=(8, 4))
+        ttk.Separator(main, orient="horizontal").grid(row=row, column=0, sticky="ew", pady=(10, 6))
         row += 1
 
         # ── 下方区域：左配置 + 右日志 ──────────────────────────────
@@ -766,72 +928,77 @@ class RosLauncher:
 
         # 左侧配置面板（35%）
         left_panel = ttk.Frame(bottom)
-        left_panel.pack(side="left", fill="both", padx=(0, 6))
+        left_panel.pack(side="left", fill="both", padx=(0, 10))
 
         # 右侧输出日志（65%）
         right_panel = ttk.Frame(bottom)
         right_panel.pack(side="left", fill="both", expand=True)
 
         # ── 左侧：地图选择 ────────────────────────────────────────
-        ttk.Label(left_panel, text="定位地图", font=(F, 10, "bold")).pack(anchor="w", pady=(0, 4))
+        self._section_header(left_panel, "定位地图")
 
         map_sel = ttk.Frame(left_panel)
-        map_sel.pack(fill="x", pady=1)
-        ttk.Label(map_sel, text="选择地图:", font=(F, 9)).pack(side="left")
+        map_sel.pack(fill="x", pady=2)
+        ttk.Label(map_sel, text="选择地图:", style="Subtle.TLabel", font=(F, 9)).pack(side="left")
         self.map_combo = ttk.Combobox(map_sel, width=16, state="readonly")
         self.map_combo.pack(side="left", padx=(4, 4))
         self._load_map_list()
-        ttk.Button(map_sel, text="应用", command=self._apply_map).pack(side="left")
+        ttk.Button(map_sel, text="应用", style="Accent.TButton",
+                   command=self._apply_map).pack(side="left")
 
         map_save = ttk.Frame(left_panel)
-        map_save.pack(fill="x", pady=1)
-        ttk.Label(map_save, text="地图名称:", font=(F, 9)).pack(side="left")
+        map_save.pack(fill="x", pady=2)
+        ttk.Label(map_save, text="地图名称:", style="Subtle.TLabel", font=(F, 9)).pack(side="left")
         self.map_name_entry = ttk.Entry(map_save, width=16)
         self.map_name_entry.pack(side="left", padx=(4, 4))
         self.map_name_entry.insert(0, "my_map")
-        ttk.Button(map_save, text="保存", command=self._save_map).pack(side="left")
+        ttk.Button(map_save, text="保存", style="Accent.TButton",
+                   command=self._save_map).pack(side="left")
 
-        ttk.Separator(left_panel, orient="horizontal").pack(fill="x", pady=8)
+        ttk.Separator(left_panel, orient="horizontal").pack(fill="x", pady=10)
 
         # ── 左侧：航线选择 ────────────────────────────────────────
-        ttk.Label(left_panel, text="航线选择", font=(F, 10, "bold")).pack(anchor="w", pady=(0, 4))
+        self._section_header(left_panel, "航线选择")
 
         wp_sel = ttk.Frame(left_panel)
-        wp_sel.pack(fill="x", pady=1)
-        ttk.Label(wp_sel, text="选择航线:", font=(F, 9)).pack(side="left")
+        wp_sel.pack(fill="x", pady=2)
+        ttk.Label(wp_sel, text="选择航线:", style="Subtle.TLabel", font=(F, 9)).pack(side="left")
         self.wp_combo = ttk.Combobox(wp_sel, width=16, state="readonly")
         self.wp_combo.pack(side="left", padx=(4, 4))
         self._load_waypoint_list()
-        ttk.Button(wp_sel, text="应用", command=self._apply_waypoint).pack(side="left")
+        ttk.Button(wp_sel, text="应用", style="Accent.TButton",
+                   command=self._apply_waypoint).pack(side="left")
 
-        ttk.Separator(left_panel, orient="horizontal").pack(fill="x", pady=8)
+        ttk.Separator(left_panel, orient="horizontal").pack(fill="x", pady=10)
 
         # ── 左侧：航线记录 ────────────────────────────────────────
-        ttk.Label(left_panel, text="航线记录", font=(F, 10, "bold")).pack(anchor="w", pady=(0, 4))
+        self._section_header(left_panel, "航线记录")
 
         wp_rec_name = ttk.Frame(left_panel)
-        wp_rec_name.pack(fill="x", pady=1)
-        ttk.Label(wp_rec_name, text="文件名称:", font=(F, 9)).pack(side="left")
+        wp_rec_name.pack(fill="x", pady=2)
+        ttk.Label(wp_rec_name, text="文件名称:", style="Subtle.TLabel", font=(F, 9)).pack(side="left")
         self.wp_rec_name_entry = ttk.Entry(wp_rec_name, width=12)
         self.wp_rec_name_entry.pack(side="left", padx=(4, 4))
         self.wp_rec_name_entry.insert(0, "waypoints.yaml")
-        ttk.Button(wp_rec_name, text="应用", command=self._apply_rec_filename).pack(side="left")
+        ttk.Button(wp_rec_name, text="应用", style="Accent.TButton",
+                   command=self._apply_rec_filename).pack(side="left")
 
         wp_rec_btns = ttk.Frame(left_panel)
-        wp_rec_btns.pack(fill="x", pady=2)
+        wp_rec_btns.pack(fill="x", pady=3)
         ttk.Button(wp_rec_btns, text="记录", width=6,
-                   command=self._wp_record).pack(side="left", padx=1)
-        ttk.Button(wp_rec_btns, text="清除", width=6,
-                   command=self._wp_clear).pack(side="left", padx=1)
-        ttk.Button(wp_rec_btns, text="保存", width=6,
-                   command=self._wp_save).pack(side="left", padx=1)
+                   command=self._wp_record).pack(side="left", padx=2)
+        ttk.Button(wp_rec_btns, text="清除", width=6, style="Danger.TButton",
+                   command=self._wp_clear).pack(side="left", padx=2)
+        ttk.Button(wp_rec_btns, text="保存", width=6, style="Accent.TButton",
+                   command=self._wp_save).pack(side="left", padx=2)
 
-        ttk.Separator(left_panel, orient="horizontal").pack(fill="x", pady=8)
+        ttk.Separator(left_panel, orient="horizontal").pack(fill="x", pady=10)
 
         # ── 左侧：速度控制 ────────────────────────────────────────
-        ttk.Label(left_panel, text="速度控制", font=(F, 10, "bold")).pack(anchor="w", pady=(0, 4))
+        self._section_header(left_panel, "速度控制")
 
         self.vel_btn = ttk.Button(left_panel, text="开启控制", width=10,
+                                  style="Success.TButton",
                                   command=self._toggle_vel_control)
         self.vel_btn.pack(anchor="w", pady=(0, 8))
 
@@ -843,8 +1010,8 @@ class RosLauncher:
         for i, name in enumerate(vel_names):
             col = ttk.Frame(vel_display)
             col.pack(side="left", expand=True)
-            ttk.Label(col, text=name, font=(F, 8)).pack()
-            lbl = ttk.Label(col, text="0.00", font=(F, 10, "bold"))
+            ttk.Label(col, text=name, style="Subtle.TLabel", font=(F, 8)).pack()
+            lbl = ttk.Label(col, text="0.00", font=(F, 11, "bold"))
             lbl.pack()
             self.vel_labels.append(lbl)
 
@@ -861,28 +1028,30 @@ class RosLauncher:
             r, c = divmod(i, 2)
             ttk.Button(vel_btns, text=text, width=6,
                        command=lambda a=axis, d=direction: self._adjust_vel(a, d)).grid(
-                row=r, column=c, padx=1, pady=1, sticky="ew")
+                row=r, column=c, padx=2, pady=2, sticky="ew")
         vel_btns.grid_columnconfigure(0, weight=1)
         vel_btns.grid_columnconfigure(1, weight=1)
 
-        ttk.Button(left_panel, text="归零", command=self._zero_vel).pack(fill="x", pady=(4, 0))
+        ttk.Button(left_panel, text="归零", style="Accent.TButton",
+                   command=self._zero_vel).pack(fill="x", pady=(6, 0))
 
-        ttk.Separator(left_panel, orient="horizontal").pack(fill="x", pady=8)
+        ttk.Separator(left_panel, orient="horizontal").pack(fill="x", pady=10)
 
         # ── 左侧：云台 Pitch 设置 ────────────────────────────────
-        ttk.Label(left_panel, text="云台 Pitch", font=(F, 10, "bold")).pack(anchor="w", pady=(0, 4))
+        self._section_header(left_panel, "云台 Pitch")
 
         gimbal_frame = ttk.Frame(left_panel)
         gimbal_frame.pack(fill="x", pady=2)
-        ttk.Label(gimbal_frame, text="角度:", font=(F, 9)).pack(side="left")
+        ttk.Label(gimbal_frame, text="角度:", style="Subtle.TLabel", font=(F, 9)).pack(side="left")
         self.gimbal_pitch_entry = ttk.Entry(gimbal_frame, width=8)
         self.gimbal_pitch_entry.pack(side="left", padx=(4, 4))
         self.gimbal_pitch_entry.insert(0, "-60")
-        ttk.Button(gimbal_frame, text="应用", command=self._apply_gimbal_pitch).pack(side="left")
-        ttk.Label(gimbal_frame, text="°", font=(F, 9)).pack(side="left")
+        ttk.Button(gimbal_frame, text="应用", style="Accent.TButton",
+                   command=self._apply_gimbal_pitch).pack(side="left")
+        ttk.Label(gimbal_frame, text="°", style="Subtle.TLabel", font=(F, 9)).pack(side="left")
 
         # ── 右侧：状态显示 ────────────────────────────────────────
-        ttk.Label(right_panel, text="状态机", font=(F, 10, "bold")).pack(anchor="w", pady=(0, 4))
+        self._section_header(right_panel, "状态机")
 
         state_frame = ttk.Frame(right_panel)
         state_frame.pack(fill="x", pady=(0, 8))
@@ -899,22 +1068,24 @@ class RosLauncher:
         ]
         for state_name, display_name in states:
             lbl = ttk.Label(state_frame, text=display_name, font=(F, 9),
-                            relief="groove", padding=2, anchor="center")
-            lbl.pack(side="left", padx=2, fill="x", expand=True)
+                            foreground=Palette.SUBTLE, background=Palette.CHIP_BG,
+                            relief="flat", padding=(6, 5), anchor="center")
+            lbl.pack(side="left", padx=3, fill="x", expand=True)
             self.state_labels[state_name] = lbl
 
         # Initialize state subscriber
         self._init_state_subscriber()
 
-        ttk.Separator(right_panel, orient="horizontal").pack(fill="x", pady=4)
+        ttk.Separator(right_panel, orient="horizontal").pack(fill="x", pady=6)
 
         # ── 右侧：输出日志 ────────────────────────────────────────
-        ttk.Label(right_panel, text="Output", font=(F, 10, "bold")).pack(anchor="w", pady=(0, 4))
+        self._section_header(right_panel, "Output")
         self.notebook = ttk.Notebook(right_panel)
         self.notebook.pack(fill="both", expand=True)
 
         # ── 布局权重 ──────────────────────────────────────────────
         self.root.grid_rowconfigure(0, weight=1)
+        self.root.grid_columnconfigure(0, weight=1)
         main.grid_rowconfigure(row, weight=1)  # bottom 行可扩展
         main.grid_columnconfigure(0, weight=1)
         bottom.pack_propagate(True)
@@ -927,18 +1098,21 @@ class RosLauncher:
             if not items:
                 continue
             if not first:
-                ttk.Separator(parent, orient="vertical").pack(side="left", fill="y", padx=6)
+                ttk.Separator(parent, orient="vertical").pack(side="left", fill="y", padx=8)
             first = False
-            ttk.Label(parent, text=category, font=(font, 9, "bold")).pack(side="left", padx=(0, 4))
+            ttk.Label(parent, text=category, style="Header.TLabel",
+                      font=(font, 9, "bold")).pack(side="left", padx=(0, 6))
             for entry in items:
                 label = entry["label"]
                 btn_frame = ttk.Frame(parent)
-                btn_frame.pack(side="left", padx=1)
+                btn_frame.pack(side="left", padx=2)
                 ttk.Button(btn_frame, text=label, width=14,
                            command=lambda l=label: self._launch(l)).pack(side="left")
-                status = ttk.Label(btn_frame, text="○", width=1)
-                status.pack(side="left")
-                kill_btn = ttk.Button(btn_frame, text="✕", width=2,
+                glyph, color = STATUS_IDLE
+                status = ttk.Label(btn_frame, text=glyph, width=2, foreground=color,
+                                   font=(font, 10))
+                status.pack(side="left", padx=(2, 0))
+                kill_btn = ttk.Button(btn_frame, text="✕", width=2, style="Kill.TButton",
                                       command=lambda l=label: self._kill(l))
                 kill_btn.pack(side="left")
                 entry["_status"] = status
@@ -947,6 +1121,7 @@ class RosLauncher:
 
 if __name__ == "__main__":
     root = tk.Tk()
-    root.geometry("680x720")
+    root.geometry("760x780")
+    root.minsize(680, 640)
     app = RosLauncher(root)
     root.mainloop()
