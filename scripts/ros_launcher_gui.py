@@ -719,6 +719,43 @@ class RosLauncher:
         self._call_trigger_srv(
             "indooruav_controller/waypoint_recorder/save", "保存航点")
 
+    def _wp_auto_start(self):
+        """Start auto recording waypoints."""
+        self._call_trigger_srv(
+            "indooruav_controller/waypoint_recorder/auto_record_start", "自动录制")
+
+    def _wp_auto_stop(self):
+        """Stop auto recording waypoints."""
+        self._call_trigger_srv(
+            "indooruav_controller/waypoint_recorder/auto_record_stop", "停止录制")
+
+    def _apply_auto_interval(self):
+        """Set auto record interval by modifying config.yaml."""
+        try:
+            interval = float(self.wp_auto_interval_entry.get())
+        except ValueError:
+            self._log("[WARN] 间隔值无效，请输入数字", label="System")
+            return
+        if interval < 0.5:
+            self._log("[WARN] 间隔不能小于 0.5 秒", label="System")
+            return
+        try:
+            with open(self.WAYPOINT_YAML, "r") as f:
+                content = f.read()
+            # Update auto_record_interval_s in recorder section
+            new_content = re.sub(
+                r'(auto_record_interval_s:\s*)[\d.]+',
+                r'\g<1>{}'.format(interval),
+                content,
+                count=1,
+            )
+            with open(self.WAYPOINT_YAML, "w") as f:
+                f.write(new_content)
+            self._log(f"[REC] 已设置自动录制间隔: {interval} 秒", label="System")
+            self._log(f"[REC] 请重启航线记录节点使配置生效", label="System")
+        except Exception as e:
+            self._log(f"[ERR] 设置间隔失败: {e}", label="System")
+
     # ------------------------------------------------------------------
     # Gimbal pitch
     # ------------------------------------------------------------------
@@ -1010,48 +1047,61 @@ class RosLauncher:
         ttk.Button(wp_rec_btns, text="保存", width=6, style="Accent.TButton",
                    command=self._wp_save).pack(side="left", padx=2)
 
+        # 自动录制
+        wp_auto_btns = ttk.Frame(left_panel)
+        wp_auto_btns.pack(fill="x", pady=3)
+        ttk.Button(wp_auto_btns, text="自动录制", width=8, style="Success.TButton",
+                   command=self._wp_auto_start).pack(side="left", padx=2)
+        ttk.Button(wp_auto_btns, text="停止录制", width=8, style="Danger.TButton",
+                   command=self._wp_auto_stop).pack(side="left", padx=2)
+
+        # 自动录制间隔
+        wp_auto_interval = ttk.Frame(left_panel)
+        wp_auto_interval.pack(fill="x", pady=2)
+        ttk.Label(wp_auto_interval, text="录制间隔:", style="Subtle.TLabel", font=(F, 9)).pack(side="left")
+        self.wp_auto_interval_entry = ttk.Entry(wp_auto_interval, width=6)
+        self.wp_auto_interval_entry.pack(side="left", padx=(4, 4))
+        self.wp_auto_interval_entry.insert(0, "3.0")
+        ttk.Label(wp_auto_interval, text="秒", style="Subtle.TLabel", font=(F, 9)).pack(side="left")
+        ttk.Button(wp_auto_interval, text="应用", style="Accent.TButton",
+                   command=self._apply_auto_interval).pack(side="left", padx=(4, 0))
+
         ttk.Separator(left_panel, orient="horizontal").pack(fill="x", pady=10)
 
         # ── 左侧：速度控制 ────────────────────────────────────────
         self._section_header(left_panel, "速度控制")
 
-        self.vel_btn = ttk.Button(left_panel, text="开启控制", width=10,
+        # 开启控制 + 速度显示 + 归零（一行）
+        vel_top = ttk.Frame(left_panel)
+        vel_top.pack(fill="x", pady=(0, 4))
+        self.vel_btn = ttk.Button(vel_top, text="开启", width=5,
                                   style="Success.TButton",
                                   command=self._toggle_vel_control)
-        self.vel_btn.pack(anchor="w", pady=(0, 8))
-
-        # 速度显示
-        vel_display = ttk.Frame(left_panel)
-        vel_display.pack(fill="x", pady=(0, 8))
+        self.vel_btn.pack(side="left", padx=(0, 4))
         self.vel_labels = []
-        vel_names = ["X:", "Y:", "Z:", "Yaw:"]
+        vel_names = ["X", "Y", "Z", "Yaw"]
         for i, name in enumerate(vel_names):
-            col = ttk.Frame(vel_display)
-            col.pack(side="left", expand=True)
-            ttk.Label(col, text=name, style="Subtle.TLabel", font=(F, 8)).pack()
-            lbl = ttk.Label(col, text="0.00", font=(F, 11, "bold"))
-            lbl.pack()
+            ttk.Label(vel_top, text=f"{name}:", style="Subtle.TLabel", font=(F, 8)).pack(side="left")
+            lbl = ttk.Label(vel_top, text="0.00", font=(F, 9, "bold"), width=5)
+            lbl.pack(side="left", padx=(0, 6))
             self.vel_labels.append(lbl)
+        ttk.Button(vel_top, text="归零", width=4, style="Accent.TButton",
+                   command=self._zero_vel).pack(side="left")
 
-        # 速度按钮（2列4行网格）
+        # 速度按钮（4列2行紧凑网格）
         vel_btns = ttk.Frame(left_panel)
-        vel_btns.pack(fill="x")
+        vel_btns.pack(fill="x", pady=(0, 4))
         vel_axes = [
-            ("X+", 0, 1), ("X-", 0, -1),
-            ("Y+", 1, 1), ("Y-", 1, -1),
-            ("Z+", 2, 1), ("Z-", 2, -1),
-            ("Yaw+", 3, 1), ("Yaw-", 3, -1),
+            ("X+", 0, 1), ("X-", 0, -1), ("Y+", 1, 1), ("Y-", 1, -1),
+            ("Z+", 2, 1), ("Z-", 2, -1), ("Yaw+", 3, 1), ("Yaw-", 3, -1),
         ]
         for i, (text, axis, direction) in enumerate(vel_axes):
-            r, c = divmod(i, 2)
-            ttk.Button(vel_btns, text=text, width=6,
+            r, c = divmod(i, 4)
+            ttk.Button(vel_btns, text=text, width=4,
                        command=lambda a=axis, d=direction: self._adjust_vel(a, d)).grid(
-                row=r, column=c, padx=2, pady=2, sticky="ew")
-        vel_btns.grid_columnconfigure(0, weight=1)
-        vel_btns.grid_columnconfigure(1, weight=1)
-
-        ttk.Button(left_panel, text="归零", style="Accent.TButton",
-                   command=self._zero_vel).pack(fill="x", pady=(6, 0))
+                row=r, column=c, padx=1, pady=1, sticky="ew")
+        for c in range(4):
+            vel_btns.grid_columnconfigure(c, weight=1)
 
         ttk.Separator(left_panel, orient="horizontal").pack(fill="x", pady=10)
 
