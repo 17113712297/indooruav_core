@@ -86,7 +86,7 @@ void IndooruavStateMachine::Handle_Cruise(Event event)
             break;
         case Event::CruiseComplete:
             state_ = State::Land;
-            Action_NotifyUavCloseLight();
+            // Action_NotifyUavCloseLight();
             Action_NotifyUavVideoRecordingStop();
             ros::Duration(0.5).sleep(); // 等待 stopRecord ACK 回来再切模式
             Action_NotifyUavSwitchPhotoMode();
