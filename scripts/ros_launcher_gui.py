@@ -14,6 +14,7 @@ from tkinter import font as tkfont
 
 import rospy
 from geometry_msgs.msg import Twist
+from std_msgs.msg import String
 
 # ============================================================
 # Configuration — add entries here to extend
@@ -423,22 +424,182 @@ class RosLauncher:
             print(f"[DEBUG] Failed to scan map dir: {e}", file=sys.stderr)
 
     def _apply_map(self):
-        """Set the selected map PCD name via rosparam."""
+        """Set the selected map PCD name by modifying localize.yaml directly."""
         selected = self.map_combo.get()
         if not selected:
             self._log("[WARN] 未选择地图！", label="System")
             return
+        yaml_path = os.path.join(WORKSPACE, "src", "FASTLIO2_SAM_LC", "config", "localize.yaml")
         try:
-            env = self._get_env()
-            param_name = "localizer/auto_reloc/pcd_name"
-            subprocess.run(
-                ["rosparam", "set", param_name, selected],
-                env=env, capture_output=True, text=True, timeout=5,
+            with open(yaml_path, "r") as f:
+                content = f.read()
+            # Replace pcd_name value: pcd_name: "xxx.pcd" -> pcd_name: "selected"
+            new_content = re.sub(
+                r'(pcd_name:\s*)"[^"]*"',
+                r'\1"{}"'.format(selected),
+                content,
+                count=1,
             )
+            with open(yaml_path, "w") as f:
+                f.write(new_content)
             self._log(f"[MAP] 已设置定位地图: {selected}", label="System")
             self._log(f"[MAP] 请重启定位节点使地图生效", label="System")
         except Exception as e:
             self._log(f"[ERR] 设置地图失败: {e}", label="System")
+
+    # ------------------------------------------------------------------
+    # Waypoint selection
+    # ------------------------------------------------------------------
+
+    WAYPOINT_DIR = os.path.join(WORKSPACE, "src", "indooruav_waypoint", "config")
+    WAYPOINT_YAML = os.path.join(WORKSPACE, "src", "indooruav_waypoint", "config", "config.yaml")
+
+    def _load_waypoint_list(self):
+        """Scan WAYPOINT_DIR for waypoints*.yaml files and populate the combobox."""
+        try:
+            yaml_files = sorted(glob.glob(os.path.join(self.WAYPOINT_DIR, "waypoints*.yaml")))
+            names = [os.path.basename(f) for f in yaml_files]
+            self.wp_combo["values"] = names
+            if names:
+                self.wp_combo.set(names[0])
+        except Exception as e:
+            print(f"[DEBUG] Failed to scan waypoint dir: {e}", file=sys.stderr)
+
+    def _apply_waypoint(self):
+        """Set the selected waypoint file by modifying config.yaml directly."""
+        selected = self.wp_combo.get()
+        if not selected:
+            self._log("[WARN] 未选择航线！", label="System")
+            return
+        try:
+            with open(self.WAYPOINT_YAML, "r") as f:
+                content = f.read()
+            # Replace waypoints_file_path value (first occurrence = tracker)
+            new_content = re.sub(
+                r'(waypoints_file_path:\s*)\S+',
+                r'\g<1>config/{}'.format(selected),
+                content,
+                count=1,
+            )
+            with open(self.WAYPOINT_YAML, "w") as f:
+                f.write(new_content)
+            self._log(f"[WP] 已设置航线文件: {selected}", label="System")
+            self._log(f"[WP] 请重启航线追踪节点使航线生效", label="System")
+        except Exception as e:
+            self._log(f"[ERR] 设置航线失败: {e}", label="System")
+
+    # ------------------------------------------------------------------
+    # Waypoint recording
+    # ------------------------------------------------------------------
+
+    def _call_trigger_srv(self, srv_name, action_name):
+        """Call a std_srvs/Trigger service."""
+        try:
+            env = self._get_env()
+            result = subprocess.run(
+                ["rosservice", "call", srv_name, "{}"],
+                env=env, capture_output=True, text=True, timeout=5,
+            )
+            out = (result.stdout + result.stderr).strip()
+            if out:
+                self._log(f"[REC] {action_name}: {out}", label="System")
+            else:
+                self._log(f"[REC] {action_name} 完成", label="System")
+        except Exception as e:
+            self._log(f"[ERR] {action_name} 失败: {e}", label="System")
+
+    def _wp_record(self):
+        """Record current position as a waypoint."""
+        self._call_trigger_srv(
+            "indooruav_controller/waypoint_recorder/record", "记录航点")
+
+    def _wp_clear(self):
+        """Clear all recorded waypoints from memory."""
+        self._call_trigger_srv(
+            "indooruav_controller/waypoint_recorder/clear", "清除航点")
+
+    def _apply_rec_filename(self):
+        """Set recorder save filename by modifying config.yaml directly."""
+        filename = self.wp_rec_name_entry.get().strip()
+        if not filename:
+            self._log("[WARN] 文件名为空！", label="System")
+            return
+        try:
+            with open(self.WAYPOINT_YAML, "r") as f:
+                content = f.read()
+            # Update the recorder's waypoints_file_path (second occurrence)
+            new_content = re.sub(
+                r'(waypoints_file_path:\s*)\S+',
+                r'\g<1>config/{}'.format(filename),
+                content,
+                count=2,
+            )
+            with open(self.WAYPOINT_YAML, "w") as f:
+                f.write(new_content)
+            self._log(f"[REC] 已设置保存文件名: {filename}", label="System")
+            self._log(f"[REC] 请重启航线记录节点使配置生效", label="System")
+        except Exception as e:
+            self._log(f"[ERR] 设置文件名失败: {e}", label="System")
+
+    def _wp_save(self):
+        """Save recorded waypoints to file."""
+        self._call_trigger_srv(
+            "indooruav_controller/waypoint_recorder/save", "保存航点")
+
+    # ------------------------------------------------------------------
+    # Gimbal pitch
+    # ------------------------------------------------------------------
+
+    def _apply_gimbal_pitch(self):
+        """Set gimbal pitch angle by modifying gimbal_angle_after_takeoff.yaml."""
+        try:
+            pitch = float(self.gimbal_pitch_entry.get())
+        except ValueError:
+            self._log("[WARN] Pitch 值无效，请输入数字", label="System")
+            return
+        yaml_path = os.path.join(WORKSPACE, "src", "indooruav_core", "config",
+                                  "gimbal_angle_after_takeoff.yaml")
+        try:
+            with open(yaml_path, "r") as f:
+                content = f.read()
+            new_content = re.sub(
+                r'(pitch:\s*)-?[\d.]+',
+                r'\g<1>{}'.format(pitch),
+                content,
+                count=1,
+            )
+            with open(yaml_path, "w") as f:
+                f.write(new_content)
+            self._log(f"[GIMBAL] 已设置起飞后云台 Pitch: {pitch}°", label="System")
+            self._log(f"[GIMBAL] 请重启状态机节点使配置生效", label="System")
+        except Exception as e:
+            self._log(f"[ERR] 设置 Pitch 失败: {e}", label="System")
+
+    # ------------------------------------------------------------------
+    # State display
+    # ------------------------------------------------------------------
+
+    def _init_state_subscriber(self):
+        """Subscribe to state machine state topic."""
+        try:
+            if not rospy.core.is_initialized():
+                rospy.init_node("ros_launcher_gui", anonymous=True, disable_signals=True)
+            rospy.Subscriber("/indooruav_core/state_machine/state",
+                             String, self._state_callback, queue_size=1)
+            print("[DEBUG] State subscriber ready", file=sys.stderr)
+        except Exception as e:
+            print(f"[DEBUG] Failed to init state subscriber: {e}", file=sys.stderr)
+
+    def _state_callback(self, msg):
+        """Update state display when state changes."""
+        current_state = msg.data
+        for name, lbl in self.state_labels.items():
+            if name == current_state:
+                lbl.config(foreground="white", background="#27ae60",
+                           font=(self._cjk_font, 9, "bold"))
+            else:
+                lbl.config(foreground="black", background="#f0f0f0",
+                           font=(self._cjk_font, 9))
 
     # ------------------------------------------------------------------
     # Velocity control
@@ -474,12 +635,11 @@ class RosLauncher:
             self.vel_thread.start()
         else:
             self.vel_enabled = False
+            self._zero_vel()  # Set vel_values to zero first
+            # Keep publishing zero for a short time before stopping thread
+            time.sleep(0.5)
             self.vel_running = False
             self.vel_btn.config(text="开启控制")
-            # Send zero velocity
-            if self.vel_pub:
-                self.vel_pub.publish(Twist())
-            self._zero_vel()
             self._log("[VEL] 速度控制已关闭", label="System")
 
     def _vel_pub_loop(self):
@@ -555,8 +715,12 @@ class RosLauncher:
     def _log(self, msg, label=None):
         """Write a message to a process tab, or to the System tab if label is None."""
         output = self._get_output(label or "System")
+        # Check if user is at the bottom before inserting
+        view = output.yview()
+        at_bottom = view[1] >= 0.99
         output.insert("end", msg + "\n")
-        output.see("end")
+        if at_bottom:
+            output.see("end")
 
     def _build_ui(self):
         main = ttk.Frame(self.root, padding=10)
@@ -629,6 +793,41 @@ class RosLauncher:
 
         ttk.Separator(left_panel, orient="horizontal").pack(fill="x", pady=8)
 
+        # ── 左侧：航线选择 ────────────────────────────────────────
+        ttk.Label(left_panel, text="航线选择", font=(F, 10, "bold")).pack(anchor="w", pady=(0, 4))
+
+        wp_sel = ttk.Frame(left_panel)
+        wp_sel.pack(fill="x", pady=1)
+        ttk.Label(wp_sel, text="选择航线:", font=(F, 9)).pack(side="left")
+        self.wp_combo = ttk.Combobox(wp_sel, width=16, state="readonly")
+        self.wp_combo.pack(side="left", padx=(4, 4))
+        self._load_waypoint_list()
+        ttk.Button(wp_sel, text="应用", command=self._apply_waypoint).pack(side="left")
+
+        ttk.Separator(left_panel, orient="horizontal").pack(fill="x", pady=8)
+
+        # ── 左侧：航线记录 ────────────────────────────────────────
+        ttk.Label(left_panel, text="航线记录", font=(F, 10, "bold")).pack(anchor="w", pady=(0, 4))
+
+        wp_rec_name = ttk.Frame(left_panel)
+        wp_rec_name.pack(fill="x", pady=1)
+        ttk.Label(wp_rec_name, text="文件名称:", font=(F, 9)).pack(side="left")
+        self.wp_rec_name_entry = ttk.Entry(wp_rec_name, width=12)
+        self.wp_rec_name_entry.pack(side="left", padx=(4, 4))
+        self.wp_rec_name_entry.insert(0, "waypoints.yaml")
+        ttk.Button(wp_rec_name, text="应用", command=self._apply_rec_filename).pack(side="left")
+
+        wp_rec_btns = ttk.Frame(left_panel)
+        wp_rec_btns.pack(fill="x", pady=2)
+        ttk.Button(wp_rec_btns, text="记录", width=6,
+                   command=self._wp_record).pack(side="left", padx=1)
+        ttk.Button(wp_rec_btns, text="清除", width=6,
+                   command=self._wp_clear).pack(side="left", padx=1)
+        ttk.Button(wp_rec_btns, text="保存", width=6,
+                   command=self._wp_save).pack(side="left", padx=1)
+
+        ttk.Separator(left_panel, orient="horizontal").pack(fill="x", pady=8)
+
         # ── 左侧：速度控制 ────────────────────────────────────────
         ttk.Label(left_panel, text="速度控制", font=(F, 10, "bold")).pack(anchor="w", pady=(0, 4))
 
@@ -667,6 +866,47 @@ class RosLauncher:
         vel_btns.grid_columnconfigure(1, weight=1)
 
         ttk.Button(left_panel, text="归零", command=self._zero_vel).pack(fill="x", pady=(4, 0))
+
+        ttk.Separator(left_panel, orient="horizontal").pack(fill="x", pady=8)
+
+        # ── 左侧：云台 Pitch 设置 ────────────────────────────────
+        ttk.Label(left_panel, text="云台 Pitch", font=(F, 10, "bold")).pack(anchor="w", pady=(0, 4))
+
+        gimbal_frame = ttk.Frame(left_panel)
+        gimbal_frame.pack(fill="x", pady=2)
+        ttk.Label(gimbal_frame, text="角度:", font=(F, 9)).pack(side="left")
+        self.gimbal_pitch_entry = ttk.Entry(gimbal_frame, width=8)
+        self.gimbal_pitch_entry.pack(side="left", padx=(4, 4))
+        self.gimbal_pitch_entry.insert(0, "-60")
+        ttk.Button(gimbal_frame, text="应用", command=self._apply_gimbal_pitch).pack(side="left")
+        ttk.Label(gimbal_frame, text="°", font=(F, 9)).pack(side="left")
+
+        # ── 右侧：状态显示 ────────────────────────────────────────
+        ttk.Label(right_panel, text="状态机", font=(F, 10, "bold")).pack(anchor="w", pady=(0, 4))
+
+        state_frame = ttk.Frame(right_panel)
+        state_frame.pack(fill="x", pady=(0, 8))
+
+        self.state_labels = {}
+        states = [
+            ("Await", "待机"),
+            ("CheckBeforeTakeOff", "自检"),
+            ("TakeOff", "起飞"),
+            ("Cruise", "巡航"),
+            ("DataCollection", "采集"),
+            ("Land", "降落"),
+            ("Charge", "充电"),
+        ]
+        for state_name, display_name in states:
+            lbl = ttk.Label(state_frame, text=display_name, font=(F, 9),
+                            relief="groove", padding=2, anchor="center")
+            lbl.pack(side="left", padx=2, fill="x", expand=True)
+            self.state_labels[state_name] = lbl
+
+        # Initialize state subscriber
+        self._init_state_subscriber()
+
+        ttk.Separator(right_panel, orient="horizontal").pack(fill="x", pady=4)
 
         # ── 右侧：输出日志 ────────────────────────────────────────
         ttk.Label(right_panel, text="Output", font=(F, 10, "bold")).pack(anchor="w", pady=(0, 4))
