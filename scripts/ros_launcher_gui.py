@@ -57,6 +57,10 @@ COMMANDS = {
         {"label": "航点记录按钮", "cmd": ["bash", os.path.join(SHELL_DIR, "waypoint_record_button.sh")]},
         {"label": "里程计记录",   "cmd": ["python", os.path.join(WORKSPACE, "src", "indooruav_core", "scripts", "odometry_recorder.py")]},
     ],
+    "Services": [
+        {"label": "启动HTTP服务", "cmd": ["roslaunch", "indooruav_http", "bringup_indooruav_http.launch"]},
+        {"label": "启动任务管理", "cmd": ["roslaunch", "indooruav_mission", "bringup_mission.launch"]},
+    ],
 }
 
 # ============================================================
@@ -139,8 +143,8 @@ class RosLauncher:
         self._setup_styles(default_font, bold_font)
         self.root.configure(bg=Palette.BG)
 
-        self._build_ui()
         self._start_roscore()
+        self._build_ui()
 
         # Ensure roscore is cleaned up on exit
         self.root.protocol("WM_DELETE_WINDOW", self._on_close)
@@ -253,7 +257,7 @@ class RosLauncher:
             pass
 
         self._dbg("[DEBUG] Starting roscore ...")
-        env = os.environ.copy()
+        env = self._get_env()
         try:
             self.roscore_proc = subprocess.Popen(
                 ["roscore"],
@@ -262,19 +266,32 @@ class RosLauncher:
                 text=True, bufsize=1,
                 start_new_session=True,
             )
-            # Wait briefly for roscore to come up
-            time.sleep(2)
-            if self.roscore_proc.poll() is not None:
-                self._dbg(f"[DEBUG] roscore failed to start, rc={self.roscore_proc.returncode}")
-                self.roscore_proc = None
+            # Wait for roscore to come up (poll the master port)
+            for _ in range(15):
+                time.sleep(1)
+                if self.roscore_proc.poll() is not None:
+                    self._dbg(f"[DEBUG] roscore failed to start, rc={self.roscore_proc.returncode}")
+                    self.roscore_proc = None
+                    break
+                try:
+                    s = socket.create_connection(("localhost", 11311), timeout=1)
+                    s.close()
+                    self._dbg(f"[DEBUG] roscore started, pid={self.roscore_proc.pid}")
+                    break
+                except Exception:
+                    pass
             else:
-                self._dbg(f"[DEBUG] roscore started, pid={self.roscore_proc.pid}")
+                self._dbg("[DEBUG] roscore still not ready after 15s, giving up")
+                self.roscore_proc.kill()
+                self.roscore_proc = None
         except Exception as e:
             self._dbg(f"[DEBUG] Failed to start roscore: {e}")
             self.roscore_proc = None
         self._update_roscore_status()
 
     def _update_roscore_status(self):
+        if not hasattr(self, "roscore_status"):
+            return
         if self.roscore_proc and self.roscore_proc.poll() is None:
             self.roscore_status.config(text="● running", foreground=Palette.SUCCESS)
         else:
@@ -304,7 +321,8 @@ class RosLauncher:
     def _dbg(self, msg):
         """Log to both stderr (terminal) and GUI output widget."""
         print(msg, file=sys.stderr, flush=True)
-        self._log(msg)
+        if hasattr(self, "notebook"):
+            self._log(msg)
 
     def _style_console(self, text):
         """Apply console colors and log-level tags to a ScrolledText (display only)."""
@@ -906,7 +924,7 @@ class RosLauncher:
 
         # ── 启动按钮区域（按行分组）────────────────────────────────
         # 第一行: Core, Controller, SLAM
-        row1_categories = ["Core", "Controller", "SLAM"]
+        row1_categories = ["Core", "Controller", "SLAM", "Services"]
         btn_row1 = ttk.Frame(main)
         btn_row1.grid(row=row, column=0, sticky="ew", pady=3)
         self._build_button_row(btn_row1, row1_categories, F)
