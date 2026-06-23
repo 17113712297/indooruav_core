@@ -10,7 +10,7 @@ indooruav_core:
     set_gimbal_angle: "indooruav_controller/controller_hardware/gimbal_angle"
     gimbal_angle_after_takeoff:
       mode: 0        # 0=ABSOLUTE, 1=RELATIVE
-      pitch: -60.0   # 向下 60°
+      pitch: -45.0   # 向下 60°
       roll: 0.0
       yaw: 0.0
       duration: 3.0  # 3 秒完成转动
