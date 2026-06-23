@@ -26,7 +26,7 @@ SHELL_DIR = os.path.join(WORKSPACE, "src", "shell")
 SETUP_BASH = os.path.join(WORKSPACE, "devel", "setup.bash")
 THREE_D_SETUP_BASH = os.path.join(THREE_D_WORKSPACE, "devel", "setup.bash")
 
-MAP_DIR = os.path.join(WORKSPACE, "src", "FASTLIO2_SAM_LC", "map")
+MAP_DIR = os.path.join(WORKSPACE, "src", "FASTLIO2_SAM_LC", "map3d")
 VEL_TOPIC = "indooruav_controller/waypoint_tracker/cmd_vel"
 VEL_RATE_HZ = 10.0
 VEL_STEP = 0.1  # m/s per click
@@ -624,7 +624,7 @@ class RosLauncher:
     # Waypoint selection
     # ------------------------------------------------------------------
 
-    WAYPOINT_DIR = os.path.join(WORKSPACE, "src", "indooruav_waypoint", "config")
+    WAYPOINT_DIR = os.path.join(WORKSPACE, "src", "indooruav_waypoint", "waypoints")
     WAYPOINT_YAML = os.path.join(WORKSPACE, "src", "indooruav_waypoint", "config", "config.yaml")
 
     def _load_waypoint_list(self):
