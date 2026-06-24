@@ -665,6 +665,21 @@ class RosLauncher:
     # Waypoint recording
     # ------------------------------------------------------------------
 
+    def _get_current_waypoint_file(self):
+        """Read the recorder's waypoint file path from config.yaml."""
+        try:
+            with open(self.WAYPOINT_YAML, "r") as f:
+                content = f.read()
+            # Find the second waypoints_file_path (recorder section)
+            matches = re.findall(r'waypoints_file_path:\s*(\S+)', content)
+            if len(matches) >= 2:
+                wp_rel = matches[1]  # e.g. "config/waypoints823.yaml"
+                # Build absolute path: indooruav_waypoint/<rel>
+                return os.path.join(WORKSPACE, "src", "indooruav_waypoint", wp_rel)
+        except Exception:
+            pass
+        return None
+
     def _call_trigger_srv(self, srv_name, action_name):
         """Call a std_srvs/Trigger service."""
         try:
@@ -681,15 +696,62 @@ class RosLauncher:
         except Exception as e:
             self._log(f"[ERR] {action_name} 失败: {e}", label="System")
 
+    def _call_trigger_srv_with_check(self, srv_name, action_name, btn, check_file=True):
+        """Call service, then verify the waypoint file was actually modified."""
+        wp_file = self._get_current_waypoint_file() if check_file else None
+        mtime_before = os.path.getmtime(wp_file) if wp_file and os.path.exists(wp_file) else 0
+
+        try:
+            env = self._get_env()
+            result = subprocess.run(
+                ["rosservice", "call", srv_name, "{}"],
+                env=env, capture_output=True, text=True, timeout=5,
+            )
+            out = (result.stdout + result.stderr).strip()
+        except Exception as e:
+            self._log(f"[ERR] {action_name} 失败: {e}", label="System")
+            self._flash_btn(btn, success=False)
+            return
+
+        # Check service response for success field
+        srv_ok = "success: True" in out or "success: true" in out
+
+        if not srv_ok:
+            self._log(f"[REC] {action_name} 失败: {out}", label="System")
+            self._flash_btn(btn, success=False)
+            return
+
+        # Service succeeded, now check file if needed
+        if check_file and wp_file:
+            time.sleep(0.3)
+            mtime_after = os.path.getmtime(wp_file) if os.path.exists(wp_file) else 0
+            if mtime_after > mtime_before:
+                self._log(f"[REC] {action_name} 成功，文件已更新", label="System")
+                self._flash_btn(btn, success=True)
+            else:
+                self._log(f"[REC] {action_name} 完成，但文件未变化", label="System")
+                self._flash_btn(btn, success=False)
+        else:
+            self._log(f"[REC] {action_name} 成功", label="System")
+            self._flash_btn(btn, success=True)
+
+    def _flash_btn(self, btn, success=True):
+        """Flash button green on success, red on failure, then revert."""
+        style = "Success.TButton" if success else "Danger.TButton"
+        btn.config(style=style)
+        self.root.after(1500, lambda: btn.config(style="TButton"))
+
     def _wp_record(self):
         """Record current position as a waypoint."""
-        self._call_trigger_srv(
-            "indooruav_controller/waypoint_recorder/record", "记录航点")
+        self._call_trigger_srv_with_check(
+            "indooruav_controller/waypoint_recorder/record", "记录航点",
+            self.wp_record_btn, check_file=False)
 
     def _wp_clear(self):
         """Clear all recorded waypoints from memory."""
-        self._call_trigger_srv(
-            "indooruav_controller/waypoint_recorder/clear", "清除航点")
+        self._call_trigger_srv_with_check(
+            "indooruav_controller/waypoint_recorder/clear", "清除航点",
+            self.wp_clear_btn, check_file=False)
 
     def _apply_rec_filename(self):
         """Set recorder save filename by modifying config.yaml directly."""
@@ -716,18 +778,86 @@ class RosLauncher:
 
     def _wp_save(self):
         """Save recorded waypoints to file."""
-        self._call_trigger_srv(
-            "indooruav_controller/waypoint_recorder/save", "保存航点")
+        self._call_trigger_srv_with_check(
+            "indooruav_controller/waypoint_recorder/save", "保存航点",
+            self.wp_save_btn, check_file=True)
+
+    def _run_pcd_to_2d(self):
+        """Run pcd_to_2d.py in background, highlight button while running."""
+        if self.pcd2d_running:
+            return
+        self.pcd2d_running = True
+        self.pcd2d_btn.config(text="生成中...", style="Accent.TButton")
+        self._log("[2D] 开始生成2D地图...", label="System")
+
+        def worker():
+            try:
+                env = self._get_env()
+                script = os.path.join(WORKSPACE, "src", "FASTLIO2_SAM_LC", "scripts", "pcd_to_2d.py")
+                proc = subprocess.Popen(
+                    ["python3", "-u", script],
+                    env=env,
+                    stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                    text=True, bufsize=1,
+                )
+                lines = []
+                for line in proc.stdout:
+                    line = line.rstrip()
+                    lines.append(line)
+                    print(f"[2D] {line}", file=sys.stderr, flush=True)
+                proc.wait()
+                out = "\n".join(lines)
+                if proc.returncode == 0:
+                    self._log(f"[2D] 生成完成", label="System")
+                else:
+                    self._log(f"[2D] 生成失败 (exit {proc.returncode})", label="System")
+            except subprocess.TimeoutExpired:
+                self._log("[2D] 生成超时！", label="System")
+            except Exception as e:
+                self._log(f"[2D] 生成异常: {e}", label="System")
+            finally:
+                self.pcd2d_running = False
+                self.pcd2d_btn.config(text="生成2D地图", style="TButton")
+
+        threading.Thread(target=worker, daemon=True).start()
 
     def _wp_auto_start(self):
         """Start auto recording waypoints."""
-        self._call_trigger_srv(
-            "indooruav_controller/waypoint_recorder/auto_record_start", "自动录制")
+        try:
+            env = self._get_env()
+            result = subprocess.run(
+                ["rosservice", "call",
+                 "indooruav_controller/waypoint_recorder/auto_record_start", "{}"],
+                env=env, capture_output=True, text=True, timeout=5,
+            )
+            out = (result.stdout + result.stderr).strip()
+            if "success: True" in out or "success: true" in out:
+                self._log("[REC] 自动录制启动成功", label="System")
+                self.auto_recording = True
+                self.wp_auto_start_btn.config(text="录制中...", style="Success.TButton")
+            else:
+                self._log(f"[REC] 自动录制启动失败: {out}", label="System")
+        except Exception as e:
+            self._log(f"[ERR] 自动录制启动失败: {e}", label="System")
 
     def _wp_auto_stop(self):
         """Stop auto recording waypoints."""
-        self._call_trigger_srv(
-            "indooruav_controller/waypoint_recorder/auto_record_stop", "停止录制")
+        try:
+            env = self._get_env()
+            result = subprocess.run(
+                ["rosservice", "call",
+                 "indooruav_controller/waypoint_recorder/auto_record_stop", "{}"],
+                env=env, capture_output=True, text=True, timeout=5,
+            )
+            out = (result.stdout + result.stderr).strip()
+            if "success: True" in out or "success: true" in out:
+                self._log("[REC] 自动录制已停止", label="System")
+            else:
+                self._log(f"[REC] 停止录制失败: {out}", label="System")
+        except Exception as e:
+            self._log(f"[ERR] 停止录制失败: {e}", label="System")
+        self.auto_recording = False
+        self.wp_auto_start_btn.config(text="自动录制", style="TButton")
 
     def _apply_auto_interval(self):
         """Set auto record interval by modifying config.yaml."""
@@ -1040,18 +1170,23 @@ class RosLauncher:
 
         wp_rec_btns = ttk.Frame(left_panel)
         wp_rec_btns.pack(fill="x", pady=3)
-        ttk.Button(wp_rec_btns, text="记录", width=6,
-                   command=self._wp_record).pack(side="left", padx=2)
-        ttk.Button(wp_rec_btns, text="清除", width=6, style="Danger.TButton",
-                   command=self._wp_clear).pack(side="left", padx=2)
-        ttk.Button(wp_rec_btns, text="保存", width=6, style="Accent.TButton",
-                   command=self._wp_save).pack(side="left", padx=2)
+        self.wp_record_btn = ttk.Button(wp_rec_btns, text="记录", width=6,
+                   command=self._wp_record)
+        self.wp_record_btn.pack(side="left", padx=2)
+        self.wp_clear_btn = ttk.Button(wp_rec_btns, text="清除", width=6, style="Danger.TButton",
+                   command=self._wp_clear)
+        self.wp_clear_btn.pack(side="left", padx=2)
+        self.wp_save_btn = ttk.Button(wp_rec_btns, text="保存", width=6, style="TButton",
+                   command=self._wp_save)
+        self.wp_save_btn.pack(side="left", padx=2)
 
         # 自动录制
+        self.auto_recording = False
         wp_auto_btns = ttk.Frame(left_panel)
         wp_auto_btns.pack(fill="x", pady=3)
-        ttk.Button(wp_auto_btns, text="自动录制", width=8, style="Success.TButton",
-                   command=self._wp_auto_start).pack(side="left", padx=2)
+        self.wp_auto_start_btn = ttk.Button(wp_auto_btns, text="自动录制", width=8, style="Success.TButton",
+                   command=self._wp_auto_start)
+        self.wp_auto_start_btn.pack(side="left", padx=2)
         ttk.Button(wp_auto_btns, text="停止录制", width=8, style="Danger.TButton",
                    command=self._wp_auto_stop).pack(side="left", padx=2)
 
@@ -1065,6 +1200,14 @@ class RosLauncher:
         ttk.Label(wp_auto_interval, text="秒", style="Subtle.TLabel", font=(F, 9)).pack(side="left")
         ttk.Button(wp_auto_interval, text="应用", style="Accent.TButton",
                    command=self._apply_auto_interval).pack(side="left", padx=(4, 0))
+
+        # 生成2D地图按钮
+        self.pcd2d_running = False
+        wp_2d = ttk.Frame(left_panel)
+        wp_2d.pack(fill="x", pady=3)
+        self.pcd2d_btn = ttk.Button(wp_2d, text="生成2D地图", style="TButton",
+                                     command=self._run_pcd_to_2d)
+        self.pcd2d_btn.pack(side="left", padx=2)
 
         ttk.Separator(left_panel, orient="horizontal").pack(fill="x", pady=10)
 
