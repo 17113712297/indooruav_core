@@ -53,13 +53,13 @@ COMMANDS = {
         {"label": "状态机测试",   "cmd": ["bash", os.path.join(SHELL_DIR, "test_state_machine.sh")],               "stdin": True},
         {"label": "仿真控制测试", "cmd": ["bash", os.path.join(SHELL_DIR, "test_controller_simulate.sh")],         "stdin": True},
         {"label": "实物控制测试", "cmd": ["bash", os.path.join(SHELL_DIR, "test_controller_hardware.sh")],         "stdin": True},
-        {"label": "里程计旋转",   "cmd": ["bash", os.path.join(SHELL_DIR, "odometry_frame_rotator.sh")]},
         {"label": "航点记录按钮", "cmd": ["bash", os.path.join(SHELL_DIR, "waypoint_record_button.sh")]},
         {"label": "里程计记录",   "cmd": ["python", os.path.join(WORKSPACE, "src", "indooruav_core", "scripts", "odometry_recorder.py")]},
+        {"label": "像素坐标发布", "cmd": ["python3", "-u", os.path.join(WORKSPACE, "src", "FASTLIO2_SAM_LC", "scripts", "odometry_to_pixel.py")]},
     ],
     "Services": [
         {"label": "启动HTTP服务", "cmd": ["roslaunch", "indooruav_http", "bringup_indooruav_http.launch"]},
-        {"label": "启动任务管理", "cmd": ["roslaunch", "indooruav_mission", "bringup_mission.launch"]},
+        {"label": "启动降落", "cmd": ["roslaunch", "indooruav_mission", "bringup_mission.launch"]},
     ],
 }
 
@@ -1316,13 +1316,15 @@ class RosLauncher:
             for entry in items:
                 label = entry["label"]
                 btn_frame = ttk.Frame(parent)
-                btn_frame.pack(side="left", padx=2)
-                ttk.Button(btn_frame, text=label, width=14,
+                btn_frame.pack(side="left", padx=1)
+                # 根据标签长度动态调整按钮宽度
+                btn_width = max(8, min(14, len(label) + 2))
+                ttk.Button(btn_frame, text=label, width=btn_width,
                            command=lambda l=label: self._launch(l)).pack(side="left")
                 glyph, color = STATUS_IDLE
                 status = ttk.Label(btn_frame, text=glyph, width=2, foreground=color,
                                    font=(font, 10))
-                status.pack(side="left", padx=(2, 0))
+                status.pack(side="left", padx=(1, 0))
                 kill_btn = ttk.Button(btn_frame, text="✕", width=2, style="Kill.TButton",
                                       command=lambda l=label: self._kill(l))
                 kill_btn.pack(side="left")
@@ -1332,7 +1334,7 @@ class RosLauncher:
 
 if __name__ == "__main__":
     root = tk.Tk()
-    root.geometry("760x780")
-    root.minsize(680, 640)
+    root.geometry("900x780")
+    root.minsize(800, 640)
     app = RosLauncher(root)
     root.mainloop()
