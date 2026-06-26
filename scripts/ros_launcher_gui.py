@@ -589,8 +589,11 @@ class RosLauncher:
                 return (0, int(name)) if name.isdigit() else (1, name)
             pcd_files = sorted(glob.glob(os.path.join(MAP_DIR, "*.pcd")), key=_sort_key)
             names = [os.path.basename(f) for f in pcd_files]
+            current = self.map_combo.get()
             self.map_combo["values"] = names
-            if names:
+            if current and current in names:
+                self.map_combo.set(current)
+            elif names:
                 self.map_combo.set(names[0])
             print(f"[DEBUG] Found {len(names)} PCD files in {MAP_DIR}", file=sys.stderr)
         except Exception as e:
@@ -606,9 +609,9 @@ class RosLauncher:
         try:
             with open(yaml_path, "r") as f:
                 content = f.read()
-            # Replace pcd_name value: pcd_name: "xxx.pcd" -> pcd_name: "selected"
+            # Replace pcd_name value (supports both quoted "xxx.pcd" and unquoted xxx.pcd)
             new_content = re.sub(
-                r'(pcd_name:\s*)"[^"]*"',
+                r'(pcd_name:\s*)(?:"[^"]*"|\S+)',
                 r'\1"{}"'.format(selected),
                 content,
                 count=1,
@@ -632,8 +635,11 @@ class RosLauncher:
         try:
             yaml_files = sorted(glob.glob(os.path.join(self.WAYPOINT_DIR, "waypoints*.yaml")))
             names = [os.path.basename(f) for f in yaml_files]
+            current = self.wp_combo.get()
             self.wp_combo["values"] = names
-            if names:
+            if current and current in names:
+                self.wp_combo.set(current)
+            elif names:
                 self.wp_combo.set(names[0])
         except Exception as e:
             print(f"[DEBUG] Failed to scan waypoint dir: {e}", file=sys.stderr)
@@ -1128,6 +1134,8 @@ class RosLauncher:
         self.map_combo = ttk.Combobox(map_sel, width=16, state="readonly")
         self.map_combo.pack(side="left", padx=(4, 4))
         self._load_map_list()
+        ttk.Button(map_sel, text="刷新", width=4,
+                   command=self._load_map_list).pack(side="left", padx=(0, 2))
         ttk.Button(map_sel, text="应用", style="Accent.TButton",
                    command=self._apply_map).pack(side="left")
 
@@ -1151,6 +1159,8 @@ class RosLauncher:
         self.wp_combo = ttk.Combobox(wp_sel, width=16, state="readonly")
         self.wp_combo.pack(side="left", padx=(4, 4))
         self._load_waypoint_list()
+        ttk.Button(wp_sel, text="刷新", width=4,
+                   command=self._load_waypoint_list).pack(side="left", padx=(0, 2))
         ttk.Button(wp_sel, text="应用", style="Accent.TButton",
                    command=self._apply_waypoint).pack(side="left")
 
