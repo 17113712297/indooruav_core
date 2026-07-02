@@ -827,6 +827,43 @@ class RosLauncher:
 
         threading.Thread(target=worker, daemon=True).start()
 
+    def _run_odometry_to_pixel(self):
+        """Run odometry_to_pixel_offline.py in background."""
+        if self.pixel_running:
+            return
+        self.pixel_running = True
+        self.pixel_btn.config(text="生成中...", style="Accent.TButton")
+        self._log("[PIXEL] 开始生成像素坐标...", label="System")
+
+        def worker():
+            try:
+                env = self._get_env()
+                script = os.path.join(WORKSPACE, "src", "FASTLIO2_SAM_LC", "scripts",
+                                      "odometry_to_pixel_offline.py")
+                proc = subprocess.Popen(
+                    ["python3", "-u", script],
+                    env=env,
+                    stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                    text=True, bufsize=1,
+                )
+                lines = []
+                for line in proc.stdout:
+                    line = line.rstrip()
+                    lines.append(line)
+                    print(f"[PIXEL] {line}", file=sys.stderr, flush=True)
+                proc.wait()
+                if proc.returncode == 0:
+                    self._log(f"[PIXEL] 像素坐标生成完成", label="System")
+                else:
+                    self._log(f"[PIXEL] 生成失败 (exit {proc.returncode})", label="System")
+            except Exception as e:
+                self._log(f"[PIXEL] 生成异常: {e}", label="System")
+            finally:
+                self.pixel_running = False
+                self.pixel_btn.config(text="生成像素坐标", style="TButton")
+
+        threading.Thread(target=worker, daemon=True).start()
+
     def _wp_auto_start(self):
         """Start auto recording waypoints."""
         try:
@@ -1211,13 +1248,17 @@ class RosLauncher:
         ttk.Button(wp_auto_interval, text="应用", style="Accent.TButton",
                    command=self._apply_auto_interval).pack(side="left", padx=(4, 0))
 
-        # 生成2D地图按钮
+        # 生成2D地图 + 生成像素坐标 按钮
         self.pcd2d_running = False
+        self.pixel_running = False
         wp_2d = ttk.Frame(left_panel)
         wp_2d.pack(fill="x", pady=3)
         self.pcd2d_btn = ttk.Button(wp_2d, text="生成2D地图", style="TButton",
                                      command=self._run_pcd_to_2d)
         self.pcd2d_btn.pack(side="left", padx=2)
+        self.pixel_btn = ttk.Button(wp_2d, text="生成像素坐标", style="TButton",
+                                     command=self._run_odometry_to_pixel)
+        self.pixel_btn.pack(side="right", padx=2)
 
         ttk.Separator(left_panel, orient="horizontal").pack(fill="x", pady=10)
 
