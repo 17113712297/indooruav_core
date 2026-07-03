@@ -655,8 +655,8 @@ class RosLauncher:
                 content = f.read()
             # Replace waypoints_file_path value (first occurrence = tracker)
             new_content = re.sub(
-                r'(waypoints_file_path:\s*)\S+',
-                r'\g<1>config/{}'.format(selected),
+                r'(waypoints_file_path:\s*)[^\n]+',
+                r'\g<1>waypoints/{}'.format(selected),
                 content,
                 count=1,
             )
@@ -677,7 +677,7 @@ class RosLauncher:
             with open(self.WAYPOINT_YAML, "r") as f:
                 content = f.read()
             # Find the second waypoints_file_path (recorder section)
-            matches = re.findall(r'waypoints_file_path:\s*(\S+)', content)
+            matches = re.findall(r'waypoints_file_path:\s*([^\n]+)', content)
             if len(matches) >= 2:
                 wp_rel = matches[1]  # e.g. "config/waypoints823.yaml"
                 # Build absolute path: indooruav_waypoint/<rel>
@@ -768,12 +768,12 @@ class RosLauncher:
         try:
             with open(self.WAYPOINT_YAML, "r") as f:
                 content = f.read()
-            # Update the recorder's waypoints_file_path (second occurrence)
+            # Update the recorder's waypoints_file_path (only under waypoint_recorder:)
             new_content = re.sub(
-                r'(waypoints_file_path:\s*)\S+',
-                r'\g<1>config/{}'.format(filename),
+                r'(waypoint_recorder:.*?waypoints_file_path:\s*)[^\n]+',
+                r'\g<1>waypoints/{}'.format(filename),
                 content,
-                count=2,
+                flags=re.DOTALL,
             )
             with open(self.WAYPOINT_YAML, "w") as f:
                 f.write(new_content)
