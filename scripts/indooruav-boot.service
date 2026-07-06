@@ -1,0 +1,23 @@
+[Unit]
+Description=IndoorUAV ROS Boot — 开机自启全部 ROS 节点组件
+After=network.target
+Before=graphical.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+User=indooruav
+Environment=HOME=/home/indooruav
+ExecStart=/home/indooruav/Project/IndoorUavInspection2/catkin_ws/src/indooruav_core/scripts/bringup_all.sh start
+ExecStop=/home/indooruav/Project/IndoorUavInspection2/catkin_ws/src/indooruav_core/scripts/bringup_all.sh stop
+ExecReload=/home/indooruav/Project/IndoorUavInspection2/catkin_ws/src/indooruav_core/scripts/bringup_all.sh restart
+
+# 开机后延迟 15 秒再启动，确保桌面/外设已就绪
+ExecStartPre=/bin/sleep 15
+
+# 日志
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
