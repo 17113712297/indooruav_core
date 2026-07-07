@@ -56,6 +56,7 @@ COMMANDS = {
         {"label": "航点记录按钮", "cmd": ["bash", os.path.join(SHELL_DIR, "waypoint_record_button.sh")]},
         {"label": "里程计记录",   "cmd": ["python", os.path.join(WORKSPACE, "src", "indooruav_core", "scripts", "odometry_recorder.py")]},
         {"label": "像素坐标发布", "cmd": ["python3", "-u", os.path.join(WORKSPACE, "src", "FASTLIO2_SAM_LC", "scripts", "odometry_to_pixel.py")]},
+        {"label": "记录雷达数据", "cmd": ["rosbag", "record", "/livox/lidar", "/livox/imu"]},
     ],
     "Services": [
         {"label": "启动HTTP服务", "cmd": ["roslaunch", "indooruav_http", "bringup_indooruav_http.launch"]},
