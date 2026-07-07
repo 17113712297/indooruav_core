@@ -1,0 +1,37 @@
+[Unit]
+Description=IndoorUAV HTTP ROS Node — 开机只启动 HTTP 服务
+After=network.target
+Before=graphical.target
+
+[Service]
+Type=simple
+User=indooruav
+Environment=HOME=/home/indooruav
+Environment=ROS_MASTER_URI=http://localhost:11311
+
+ExecStart=/bin/bash -c '\
+  sleep 15 && \
+  source /home/indooruav/Project/IndoorUavInspection2/catkin_ws/devel/setup.bash && \
+  if ! rostopic list &>/dev/null; then \
+    echo "--- Starting roscore ..."; \
+    roscore & \
+    for i in $(seq 1 30); do \
+      if rostopic list &>/dev/null; then \
+        echo "--- roscore ready"; \
+        break; \
+      fi; \
+      sleep 1; \
+    done; \
+  fi; \
+  echo "--- Starting HTTP roslaunch ..."; \
+  exec roslaunch --screen indooruav_http bringup_indooruav_http.launch'
+
+# 停止时发送 SIGINT 给 roslaunch
+KillSignal=SIGINT
+TimeoutStopSec=10
+
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
