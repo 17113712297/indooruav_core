@@ -378,6 +378,15 @@ class ModeManager:
         return True, "采点模式已停止"
 
     # ── 巡航模式 handlers ───────────────────────────────────
+    def _handle_cruise_set_server(self, payload):
+        """Store cruise server address."""
+        addr = payload.strip()
+        if not addr:
+            return False, "服务器地址为空"
+        self._cruise_server = addr
+        rospy.loginfo("[ModeManager] cruise server set to: %s", addr)
+        return True, f"服务器地址已设置为: {addr}"
+
     def _handle_cruise_set_map(self, payload):
         """Set localization map by modifying localize.yaml."""
         selected = payload.strip()
@@ -407,21 +416,47 @@ class ModeManager:
             return False, err
         return True, f"航线文件已设置为: {filename}"
 
-    def _handle_cruise_start(self, payload):
-        """Send takeoff command via HTTP to trigger state machine."""
+    def _handle_cruise_select_wp(self, payload):
+        """Select waypoint via airlineInfo HTTP API."""
         import urllib.request
         import urllib.parse
+        filename = payload.strip()
+        if not filename:
+            return False, "文件名为空"
+        server = getattr(self, "_cruise_server", "127.0.0.1:21234")
+        airline_key = filename.replace(".yaml", "")
+        timestamp = time.strftime("%Y%m%d_%H%M%S")
         try:
-            url = "http://localhost:20000/sendTakeoffState"
-            params = urllib.parse.urlencode({
-                "siteId": 11,
-                "deviceId": 1,
-                "takeoffState": 1
-            })
-            full_url = f"{url}?{params}"
-            resp = urllib.request.urlopen(full_url, timeout=10)
+            url = f"http://{server}/airlineInfo?siteId=1&deviceId=1&airlineKey={urllib.parse.quote(airline_key)}&detectTimeCur={timestamp}"
+            rospy.loginfo("[ModeManager] cruise_select_wp GET: %s", url)
+            resp = urllib.request.urlopen(url, timeout=10)
             body = resp.read().decode("utf-8")
-            rospy.loginfo("[ModeManager] cruise_start HTTP response: %s", body)
+            rospy.loginfo("[ModeManager] cruise_select_wp response: %s", body[:200])
+            if '"resultCode": 0' in body or '"resultCode":0' in body:
+                return True, f"航线已选择: {airline_key}"
+            else:
+                return True, f"选择航线完成: {body[:100]}"
+        except Exception as e:
+            rospy.logerr("[ModeManager] cruise_select_wp failed: %s", e)
+            return False, f"选择航线失败: {e}"
+
+    def _handle_cruise_start(self, payload):
+        """Send takeoff command via sendCommand HTTP API."""
+        import urllib.request
+        server = getattr(self, "_cruise_server", "127.0.0.1:21234")
+        try:
+            url = f"http://{server}/sendCommand?siteId=1&deviceId=1&commandMode=1"
+            rospy.loginfo("[ModeManager] cruise_start GET: %s", url)
+            resp = urllib.request.urlopen(url, timeout=10)
+            body = resp.read().decode("utf-8")
+            rospy.loginfo("[ModeManager] cruise_start response: %s", body[:200])
+            if '"resultCode": 0' in body or '"resultCode":0' in body:
+                return True, "起飞指令已发送"
+            else:
+                return True, f"起飞指令发送完成: {body[:100]}"
+        except Exception as e:
+            rospy.logerr("[ModeManager] cruise_start failed: %s", e)
+            return False, f"起飞指令发送失败: {e}"
             if '"resultCode": 0' in body or '"resultCode":0' in body:
                 return True, "起飞指令已发送"
             else:
@@ -452,8 +487,10 @@ class ModeManager:
             "collect_gen_pixel": self._handle_collect_gen_pixel,
             "collect_stop": self._handle_collect_stop,
             # 巡航模式
+            "cruise_set_server": self._handle_cruise_set_server,
             "cruise_set_map": self._handle_cruise_set_map,
             "cruise_set_wp": self._handle_cruise_set_wp,
+            "cruise_select_wp": self._handle_cruise_select_wp,
             "cruise_start": self._handle_cruise_start,
         }
 
