@@ -38,6 +38,7 @@ MAP_DIR = os.path.join(WORKSPACE, "src", "FASTLIO2_SAM_LC", "map3d")
 WAYPOINT_DIR = os.path.join(WORKSPACE, "src", "indooruav_waypoint", "waypoints")
 LOCALIZE_YAML = os.path.join(WORKSPACE, "src", "FASTLIO2_SAM_LC", "config", "localize.yaml")
 WAYPOINT_YAML = os.path.join(WORKSPACE, "src", "indooruav_waypoint", "config", "config.yaml")
+GIMBAL_ANGLE_YAML = os.path.join(WORKSPACE, "src", "indooruav_core", "config", "gimbal_angle_after_takeoff.yaml")
 
 
 class ModeManager:
@@ -387,6 +388,24 @@ class ModeManager:
         rospy.loginfo("[ModeManager] cruise server set to: %s", addr)
         return True, f"服务器地址已设置为: {addr}"
 
+    def _handle_cruise_set_gimbal_pitch(self, payload):
+        """Set gimbal pitch angle in gimbal_angle_after_takeoff.yaml."""
+        pitch_str = payload.strip()
+        if not pitch_str:
+            return False, "pitch 值为空"
+        try:
+            pitch_val = float(pitch_str)
+        except ValueError:
+            return False, f"无效的 pitch 值: {pitch_str}"
+        err = self._modify_yaml(
+            GIMBAL_ANGLE_YAML,
+            r'(pitch:\s*)[^\n]+',
+            r'\g<1>{}'.format(pitch_val),
+        )
+        if err:
+            return False, err
+        return True, f"云台俯仰角已设置为: {pitch_val}°"
+
     def _handle_cruise_set_map(self, payload):
         """Set localization map by modifying localize.yaml."""
         selected = payload.strip()
@@ -488,6 +507,7 @@ class ModeManager:
             "collect_stop": self._handle_collect_stop,
             # 巡航模式
             "cruise_set_server": self._handle_cruise_set_server,
+            "cruise_set_gimbal_pitch": self._handle_cruise_set_gimbal_pitch,
             "cruise_set_map": self._handle_cruise_set_map,
             "cruise_set_wp": self._handle_cruise_set_wp,
             "cruise_select_wp": self._handle_cruise_select_wp,
