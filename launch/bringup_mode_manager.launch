@@ -1,0 +1,3 @@
+<launch>
+    <node pkg="indooruav_core" type="mode_manager.py" name="mode_manager_node" output="screen" />
+</launch>
