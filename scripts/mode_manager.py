@@ -288,8 +288,25 @@ class ModeManager:
             return False, err
         return True, f"航点文件名已设置为: waypoints/{filename}"
 
+    def _wait_for_topic(self, topic, timeout_s=30):
+        """Wait for a topic to receive its first message. Returns True if received."""
+        try:
+            env = self._get_env()
+            result = subprocess.run(
+                ["timeout", str(timeout_s), "rostopic", "echo", topic, "-n", "1"],
+                env=env, capture_output=True, text=True, timeout=timeout_s + 5)
+            ok = result.returncode == 0
+            if ok:
+                rospy.loginfo("[ModeManager] topic '%s' is ready", topic)
+            else:
+                rospy.logwarn("[ModeManager] topic '%s' not received within %ds", topic, timeout_s)
+            return ok
+        except Exception as e:
+            rospy.logwarn("[ModeManager] wait_for_topic '%s' exception: %s", topic, e)
+            return False
+
     def _handle_collect_start(self, payload):
-        """Start LiDAR + localization + waypoint recorder (auto-record at 3s interval)."""
+        """Start LiDAR + localization + waypoint recorder, auto-record when odometry ready."""
         self._kill_group("collect_")
         ok1 = self._launch_roslaunch("collect_lidar", "livox_ros_driver2",
                                      "msg_MID360.launch")
@@ -297,10 +314,13 @@ class ModeManager:
         ok3 = self._launch_bash("collect_recorder", os.path.join(SHELL_DIR, "bringup_waypoint_recorder.sh"),
                                 ["direct"])
         if ok1 or ok2 or ok3:
-            # 启动自动录制（3s 间隔，由 config.yaml 的 auto_record_interval_s 控制）
-            rospy.sleep(1.0)  # 等待 recorder 节点就绪
-            self._run_rosservice("indooruav_controller/waypoint_recorder/auto_record_start")
-            return True, "采点模式已启动（自动录制）"
+            # 等待 /Odometry_global 就绪（最长 30s），然后自动开始录制
+            if self._wait_for_topic("/Odometry_global", timeout_s=30):
+                self._run_rosservice("indooruav_controller/waypoint_recorder/auto_record_start")
+                return True, "采点模式已启动（自动录制）"
+            else:
+                rospy.logwarn("[ModeManager] 未收到里程计，请手动启动录制")
+                return True, "采点模式已启动（未收到里程计，需手动录制）"
         return False, "启动采点模式失败"
 
     def _handle_collect_gen_2d(self, payload):
