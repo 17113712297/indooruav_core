@@ -306,7 +306,7 @@ class ModeManager:
             return False
 
     def _handle_collect_start(self, payload):
-        """Start LiDAR + localization + waypoint recorder, auto-record when odometry ready."""
+        """Start LiDAR + localization + waypoint recorder, async auto-record."""
         self._kill_group("collect_")
         ok1 = self._launch_roslaunch("collect_lidar", "livox_ros_driver2",
                                      "msg_MID360.launch")
@@ -314,13 +314,17 @@ class ModeManager:
         ok3 = self._launch_bash("collect_recorder", os.path.join(SHELL_DIR, "bringup_waypoint_recorder.sh"),
                                 ["direct"])
         if ok1 or ok2 or ok3:
-            # 等待 /Odometry_global 就绪（最长 30s），然后自动开始录制
-            if self._wait_for_topic("/Odometry_global", timeout_s=30):
-                self._run_rosservice("indooruav_controller/waypoint_recorder/auto_record_start")
-                return True, "采点模式已启动（自动录制）"
-            else:
-                rospy.logwarn("[ModeManager] 未收到里程计，请手动启动录制")
-                return True, "采点模式已启动（未收到里程计，需手动录制）"
+            # 异步等待里程计就绪后自动开始录制（不阻塞 service 返回）
+            import threading
+            def _delayed_auto_record():
+                if self._wait_for_topic("/Odometry_global", timeout_s=60):
+                    self._run_rosservice("indooruav_controller/waypoint_recorder/auto_record_start")
+                    rospy.loginfo("[ModeManager] 自动录制已启动")
+                else:
+                    rospy.logwarn("[ModeManager] 未收到里程计，请手动录制")
+            t = threading.Thread(target=_delayed_auto_record, daemon=True)
+            t.start()
+            return True, "采点模式已启动"
         return False, "启动采点模式失败"
 
     def _handle_collect_gen_2d(self, payload):
