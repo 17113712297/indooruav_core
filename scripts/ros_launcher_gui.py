@@ -970,13 +970,18 @@ class RosLauncher:
                 rospy.init_node("ros_launcher_gui", anonymous=True, disable_signals=True)
             rospy.Subscriber("/indooruav_core/state_machine/state",
                              String, self._state_callback, queue_size=1)
+            rospy.async_spin()
             print("[DEBUG] State subscriber ready", file=sys.stderr)
         except Exception as e:
             print(f"[DEBUG] Failed to init state subscriber: {e}", file=sys.stderr)
 
     def _state_callback(self, msg):
-        """Update state display when state changes."""
-        current_state = msg.data
+        """Update state display when state changes (called from ROS thread)."""
+        # 将 tkinter 更新放回主线程执行，避免线程安全问题
+        self.root.after(0, self._update_state_display, msg.data)
+
+    def _update_state_display(self, current_state):
+        """Update state labels on the main thread."""
         for name, lbl in self.state_labels.items():
             if name == current_state:
                 lbl.config(foreground="white", background=Palette.SUCCESS,
