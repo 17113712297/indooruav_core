@@ -214,7 +214,7 @@ class ModeManager:
     def _scan_waypoint_files(self):
         """Return sorted list of waypoints*.yaml filenames."""
         try:
-            files = sorted(glob.glob(os.path.join(WAYPOINT_DIR, "waypoints*.yaml")))
+            files = sorted(glob.glob(os.path.join(WAYPOINT_DIR, "*.yaml")))
             return [os.path.basename(f) for f in files]
         except Exception as e:
             rospy.logerr("[ModeManager] scan waypoint dir: %s", e)
@@ -373,12 +373,12 @@ class ModeManager:
         # 匹配 waypoint_tracker 下的 waypoints_file_path（第一个）
         err = self._modify_yaml(
             WAYPOINT_YAML,
-            r'(waypoint_tracker:.*?waypoints_file_path:\s*)[^\n]+',
-            r'\g<1>waypoints/{}'.format(filename),
+            r'(?s)(waypoint_tracker:.*?waypoints_file_path:\s*)[^\n]+',
+            r'\g<1>{}'.format(filename),
         )
         if err:
             return False, err
-        return True, f"航线文件已设置为: waypoints/{filename}"
+        return True, f"航线文件已设置为: {filename}"
 
     def _handle_cruise_start(self, payload):
         """Send takeoff command via HTTP to trigger state machine."""
