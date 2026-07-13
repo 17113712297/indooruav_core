@@ -61,6 +61,7 @@ COMMANDS = {
     "Services": [
         {"label": "启动HTTP服务", "cmd": ["roslaunch", "indooruav_http", "bringup_indooruav_http.launch"]},
         {"label": "启动降落", "cmd": ["roslaunch", "indooruav_mission", "bringup_mission.launch"]},
+        {"label": "启动模式管理", "cmd": ["bash", os.path.join(SHELL_DIR, "bringup_mode_manager.sh")]},
     ],
 }
 
