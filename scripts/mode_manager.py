@@ -281,7 +281,7 @@ class ModeManager:
             return False, "文件名为空"
         err = self._modify_yaml(
             WAYPOINT_YAML,
-            r'(waypoint_recorder:.*?waypoints_file_path:\s*)[^\n]+',
+            r'(?s)(waypoint_recorder:.*?waypoints_file_path:\s*)[^\n]+',
             r'\g<1>waypoints/{}'.format(filename),
         )
         if err:
