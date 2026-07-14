@@ -329,17 +329,29 @@ class ModeManager:
         return False, "启动采点模式失败"
 
     def _handle_collect_gen_2d(self, payload):
-        """Generate 2D map from PCD (pcd_to_2d.py)."""
+        """Generate 2D map from PCD (pcd_to_2d.py) using current waypoints file."""
         script = os.path.join(WORKSPACE, "src", "FASTLIO2_SAM_LC", "scripts", "pcd_to_2d.py")
         try:
+            # 从 config.yaml 读取当前 waypoints 文件路径
+            import yaml
+            with open(WAYPOINT_YAML, "r") as f:
+                cfg = yaml.safe_load(f)
+            rel_path = cfg.get("indooruav_waypoint", {}).get("waypoint_recorder", {}).get(
+                "waypoints_file_path", "waypoints/waypoints.yaml")
+            wp_path = os.path.join(WORKSPACE, "src", "indooruav_waypoint", rel_path)
+            if not os.path.isfile(wp_path):
+                rospy.logwarn("[ModeManager] gen_2d: waypoints file not found: %s", wp_path)
+                return False, f"航点文件不存在: {wp_path}"
+
             env = self._get_env()
             proc = subprocess.Popen(
-                ["python3", "-u", script],
+                ["python3", "-u", script, wp_path],
                 env=env,
                 stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
                 start_new_session=True)
             self.processes["collect_pcd2d"] = proc
-            rospy.loginfo("[ModeManager] pcd_to_2d.py started (pid=%d)", proc.pid)
+            rospy.loginfo("[ModeManager] pcd_to_2d.py started (pid=%d) file=%s",
+                          proc.pid, wp_path)
             return True, "2D地图生成已启动"
         except Exception as e:
             return False, f"启动2D地图生成失败: {e}"
