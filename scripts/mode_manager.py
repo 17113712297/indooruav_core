@@ -213,11 +213,10 @@ class ModeManager:
             return []
 
     def _scan_waypoint_files(self):
-        """Return sorted list of waypoints*.yaml filenames (URL-encoded for PSDK safety)."""
+        """Return sorted list of waypoints*.yaml filenames."""
         try:
-            import urllib.parse
             files = sorted(glob.glob(os.path.join(WAYPOINT_DIR, "*.yaml")))
-            return [urllib.parse.quote(os.path.basename(f)) for f in files]
+            return [os.path.basename(f) for f in files]
         except Exception as e:
             rospy.logerr("[ModeManager] scan waypoint dir: %s", e)
             return []
