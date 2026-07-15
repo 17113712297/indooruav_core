@@ -47,11 +47,6 @@ class ModeManager:
         self.processes = {}
         self._env_cache = None
 
-        # 文件列表分页缓存
-        self._file_cache = {}       # {cache_key: [filenames]}
-        self._file_cache_pos = {}   # {cache_key: index}
-        self._file_cache_time = {}  # {cache_key: timestamp}
-
         # Service server
         self.service = rospy.Service(
             "/indooruav_core/mode_manager/command",
@@ -256,52 +251,14 @@ class ModeManager:
         return True, "mapping stopped"
 
     def _handle_list_maps(self, payload):
-        """Return comma-separated list of PCD files (paginated)."""
-        return self._handle_list_files("maps", self._scan_pcd_files)
+        """Return comma-separated list of PCD files."""
+        files = self._scan_pcd_files()
+        return True, ",".join(files)
 
     def _handle_list_waypoints(self, payload):
-        """Return comma-separated list of waypoint files (paginated)."""
-        return self._handle_list_files("waypoints", self._scan_waypoint_files)
-
-    def _handle_list_files(self, cache_key, scan_fn):
-        """Paginated file list: return a chunk, append __MORE__ if more remain."""
-        import time
-        now = time.time()
-        # 首次调用或缓存过期（>5s）时重新扫描
-        last_time = self._file_cache_time.get(cache_key, 0)
-        if now - last_time > 5.0:
-            files = scan_fn()
-            self._file_cache[cache_key] = files
-            self._file_cache_pos[cache_key] = 0
-            self._file_cache_time[cache_key] = now
-
-        files = self._file_cache.get(cache_key, [])
-        pos = self._file_cache_pos.get(cache_key, 0)
-
-        if pos >= len(files):
-            self._file_cache.pop(cache_key, None)
-            self._file_cache_pos.pop(cache_key, None)
-            self._file_cache_time.pop(cache_key, None)
-            return True, ""
-
-        # 取尽可能多的文件，但总长度不超过 200 字节
-        result = []
-        total_len = 0
-        max_len = 200
-        has_more = False
-        for i in range(pos, len(files)):
-            add_len = len(files[i]) + 1  # +1 逗号
-            if total_len + add_len > max_len and result:
-                has_more = True
-                break
-            result.append(files[i])
-            total_len += add_len
-            self._file_cache_pos[cache_key] = i + 1
-
-        csv = ",".join(result)
-        if has_more:
-            csv += ",__MORE__"
-        return True, csv
+        """Return comma-separated list of waypoint files."""
+        files = self._scan_waypoint_files()
+        return True, ",".join(files)
 
     # ── 采点模式 handlers ───────────────────────────────────
     def _handle_collect_set_map(self, payload):
