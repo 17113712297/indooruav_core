@@ -14,6 +14,7 @@ mode_manager.py — ROS 模式管理器节点
 """
 
 import glob
+import json
 import os
 import re
 import signal
@@ -39,6 +40,10 @@ WAYPOINT_DIR = os.path.join(WORKSPACE, "src", "indooruav_waypoint", "waypoints")
 LOCALIZE_YAML = os.path.join(WORKSPACE, "src", "FASTLIO2_SAM_LC", "config", "localize.yaml")
 WAYPOINT_YAML = os.path.join(WORKSPACE, "src", "indooruav_waypoint", "config", "config.yaml")
 GIMBAL_ANGLE_YAML = os.path.join(WORKSPACE, "src", "indooruav_core", "config", "gimbal_angle_after_takeoff.yaml")
+
+# HTTP 配置路径
+HTTP_CLIENT_YAML = os.path.join(WORKSPACE, "src", "indooruav_http", "config", "http_client.yaml")
+HTTP_SERVER_YAML = os.path.join(WORKSPACE, "src", "indooruav_http", "config", "http_server.yaml")
 
 
 class ModeManager:
@@ -496,6 +501,48 @@ class ModeManager:
             rospy.logerr("[ModeManager] cruise_start HTTP failed: %s", e)
             return False, f"HTTP 请求失败: {e}"
 
+    # ── 设置模式 handlers ─────────────────────────────────────
+    def _handle_settings_update(self, payload):
+        """
+        修改 HTTP 配置参数。
+        payload 格式为 JSON: {"key": "server_ip", "value": "10.29.3.171"}
+        支持修改的参数:
+          http_client: server_ip, server_port, remote_controller_ip,
+                       remote_controller_port, ftp_server_ip, ftp_server_port
+          http_server: local_port
+        """
+        try:
+            params = json.loads(payload.strip())
+        except (json.JSONDecodeError, AttributeError):
+            return False, "payload 格式错误，需要 JSON: {\"key\":\"...\", \"value\":\"...\"}"
+
+        key = params.get("key", "")
+        value = params.get("value", "")
+
+        # 定义参数到 YAML 的映射
+        config_map = {
+            "server_ip": (HTTP_CLIENT_YAML, r'(server_ip:\s*).*', r'\g<1>"{}"'),
+            "server_port": (HTTP_CLIENT_YAML, r'(server_port:\s*)\S+', r'\g<1>{}'),
+            "remote_controller_ip": (HTTP_CLIENT_YAML, r'(remote_controller_ip:\s*).*', r'\g<1>"{}"'),
+            "remote_controller_port": (HTTP_CLIENT_YAML, r'(remote_controller_port:\s*)\S+', r'\g<1>{}'),
+            "ftp_server_ip": (HTTP_CLIENT_YAML, r'(ftp_server_ip:\s*).*', r'\g<1>"{}"'),
+            "ftp_server_port": (HTTP_CLIENT_YAML, r'(ftp_server_port:\s*)\S+', r'\g<1>{}'),
+            "local_port": (HTTP_SERVER_YAML, r'(local_port:\s*)\S+', r'\g<1>{}'),
+        }
+
+        if key not in config_map:
+            return False, f"不支持的参数: {key}"
+
+        yaml_path, pattern, replacement_template = config_map[key]
+        replacement = replacement_template.format(value)
+
+        err = self._modify_yaml(yaml_path, pattern, replacement)
+        if err:
+            return False, err
+
+        rospy.loginfo("[ModeManager] settings_update: %s = %s", key, value)
+        return True, f"{key} 已设置为: {value}"
+
     # ── main dispatcher ──────────────────────────────────────
     def handle_command(self, req):
         command = req.command
@@ -524,6 +571,8 @@ class ModeManager:
             "cruise_set_wp": self._handle_cruise_set_wp,
             "cruise_select_wp": self._handle_cruise_select_wp,
             "cruise_start": self._handle_cruise_start,
+            # 设置模式
+            "settings_update": self._handle_settings_update,
         }
 
         handler = handlers.get(command)
