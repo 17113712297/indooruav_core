@@ -26,7 +26,7 @@ import rospy
 from indooruav_msgs.srv import ModeCommand, ModeCommandResponse
 
 # ============================================================
-# Configuration — must match ros_launcher_gui.py paths
+# Configuration — must match ros_launcher_gui.py paths1
 # ============================================================
 
 WORKSPACE = os.path.expanduser("~/Project/IndoorUavInspection2/catkin_ws")
