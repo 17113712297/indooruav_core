@@ -26,10 +26,20 @@ import rospy
 from indooruav_msgs.srv import ModeCommand, ModeCommandResponse
 
 # ============================================================
-# Configuration — must match ros_launcher_gui.py paths1
+# Configuration — 自动检测 workspace 路径，兼容不同 Jetson 部署环境
 # ============================================================
 
-WORKSPACE = os.path.expanduser("~/Project/IndoorUavInspection2/catkin_ws")
+# 通过 rospkg 自动获取 indooruav_core 包路径，反推 workspace 根目录
+_WS_FALLBACK = os.path.expanduser("~/Project/IndoorUavInspection2/catkin_ws")
+try:
+    import rospkg
+    _rospack = rospkg.RosPack()
+    _core_path = _rospack.get_path('indooruav_core')
+    # _core_path = .../catkin_ws/src/indooruav_core → 上两级得 workspace
+    WORKSPACE = os.path.dirname(os.path.dirname(_core_path))
+except Exception:
+    WORKSPACE = _WS_FALLBACK
+
 THREE_D_WORKSPACE = os.path.expanduser("~/Project/3D/catkin_ws")
 SHELL_DIR = os.path.join(WORKSPACE, "src", "shell")
 SETUP_BASH = os.path.join(WORKSPACE, "devel", "setup.bash")
@@ -41,9 +51,14 @@ LOCALIZE_YAML = os.path.join(WORKSPACE, "src", "FASTLIO2_SAM_LC", "config", "loc
 WAYPOINT_YAML = os.path.join(WORKSPACE, "src", "indooruav_waypoint", "config", "config.yaml")
 GIMBAL_ANGLE_YAML = os.path.join(WORKSPACE, "src", "indooruav_core", "config", "gimbal_angle_after_takeoff.yaml")
 
-# HTTP 配置路径
-HTTP_CLIENT_YAML = os.path.join(WORKSPACE, "src", "indooruav_http", "config", "http_client.yaml")
-HTTP_SERVER_YAML = os.path.join(WORKSPACE, "src", "indooruav_http", "config", "http_server.yaml")
+# HTTP 配置路径 — 优先通过 rospkg 获取包路径，更可靠
+try:
+    _http_path = _rospack.get_path('indooruav_http')
+    HTTP_CLIENT_YAML = os.path.join(_http_path, "config", "http_client.yaml")
+    HTTP_SERVER_YAML = os.path.join(_http_path, "config", "http_server.yaml")
+except Exception:
+    HTTP_CLIENT_YAML = os.path.join(WORKSPACE, "src", "indooruav_http", "config", "http_client.yaml")
+    HTTP_SERVER_YAML = os.path.join(WORKSPACE, "src", "indooruav_http", "config", "http_server.yaml")
 
 
 class ModeManager:
@@ -547,9 +562,9 @@ class ModeManager:
         """
         读取当前 HTTP 配置参数，返回 JSON 字符串。
         """
-        import yaml
         config = {}
         try:
+            import yaml
             if os.path.exists(HTTP_CLIENT_YAML):
                 with open(HTTP_CLIENT_YAML, "r") as f:
                     client_cfg = yaml.safe_load(f) or {}
