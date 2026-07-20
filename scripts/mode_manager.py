@@ -543,6 +543,62 @@ class ModeManager:
         rospy.loginfo("[ModeManager] settings_update: %s = %s", key, value)
         return True, f"{key} 已设置为: {value}"
 
+    def _handle_settings_get(self, payload):
+        """
+        读取当前 HTTP 配置参数，返回 JSON 字符串。
+        """
+        import yaml
+        config = {}
+        try:
+            if os.path.exists(HTTP_CLIENT_YAML):
+                with open(HTTP_CLIENT_YAML, "r") as f:
+                    client_cfg = yaml.safe_load(f) or {}
+                config["server_ip"] = client_cfg.get("server_ip", "")
+                config["server_port"] = client_cfg.get("server_port", "")
+                config["remote_controller_ip"] = client_cfg.get("remote_controller_ip", "")
+                config["remote_controller_port"] = client_cfg.get("remote_controller_port", "")
+                config["ftp_server_ip"] = client_cfg.get("ftp_server_ip", "")
+                config["ftp_server_port"] = client_cfg.get("ftp_server_port", "")
+
+            if os.path.exists(HTTP_SERVER_YAML):
+                with open(HTTP_SERVER_YAML, "r") as f:
+                    server_cfg = yaml.safe_load(f) or {}
+                config["local_port"] = server_cfg.get("local_port", "")
+
+            return True, json.dumps(config)
+        except Exception as e:
+            rospy.logerr("[ModeManager] settings_get error: %s", e)
+            return False, f"读取配置失败: {e}"
+
+    def _handle_settings_restart_http(self, payload):
+        """
+        重启 indooruav_http 节点（server + client）。
+        通过 rosnode kill + roslaunch 重新启动。
+        """
+        self._kill_group("http_")
+        try:
+            # 先杀掉现有的 http 节点
+            env = self._get_env()
+            subprocess.run(
+                ["rosnode", "kill", "/indooruav_http_server", "/indooruav_http_client"],
+                env=env, capture_output=True, timeout=10)
+            time.sleep(1)
+        except Exception:
+            pass
+
+        try:
+            ok = self._launch_roslaunch(
+                "http_server",
+                "indooruav_http",
+                "bringup_indooruav_http.launch")
+            if ok:
+                return True, "HTTP 服务已重启"
+            else:
+                return False, "重启 HTTP 服务失败"
+        except Exception as e:
+            rospy.logerr("[ModeManager] restart_http error: %s", e)
+            return False, f"重启 HTTP 失败: {e}"
+
     # ── main dispatcher ──────────────────────────────────────
     def handle_command(self, req):
         command = req.command
@@ -573,6 +629,8 @@ class ModeManager:
             "cruise_start": self._handle_cruise_start,
             # 设置模式
             "settings_update": self._handle_settings_update,
+            "settings_get": self._handle_settings_get,
+            "settings_restart_http": self._handle_settings_restart_http,
         }
 
         handler = handlers.get(command)
