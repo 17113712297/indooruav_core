@@ -120,14 +120,15 @@ class ModeManager:
             proc = subprocess.Popen(
                 cmd, env=env,
                 stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-                start_new_session=True)
+                start_new_session=True,
+                preexec_fn=os.setpgrp)
             self.processes[key] = proc
             time.sleep(0.3)
             if proc.poll() is not None:
                 rospy.logerr("[ModeManager] '%s' exited immediately (rc=%d)", key, proc.returncode)
                 self.processes.pop(key, None)
                 return False
-            rospy.loginfo("[ModeManager] '%s' started (pid=%d)", key, proc.pid)
+            rospy.loginfo("[ModeManager] '%s' started (pid=%d, pgid=%d)", key, proc.pid, os.getpgid(proc.pid))
             return True
         except Exception as e:
             rospy.logerr("[ModeManager] failed to start '%s': %s", key, e)
@@ -145,14 +146,15 @@ class ModeManager:
             proc = subprocess.Popen(
                 cmd, env=env,
                 stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-                start_new_session=True)
+                start_new_session=True,
+                preexec_fn=os.setpgrp)
             self.processes[key] = proc
             time.sleep(1.0)
             if proc.poll() is not None:
                 rospy.logerr("[ModeManager] roslaunch '%s' exited immediately (rc=%d)", key, proc.returncode)
                 self.processes.pop(key, None)
                 return False
-            rospy.loginfo("[ModeManager] roslaunch '%s' started (pid=%d)", key, proc.pid)
+            rospy.loginfo("[ModeManager] roslaunch '%s' started (pid=%d, pgid=%d)", key, proc.pid, os.getpgid(proc.pid))
             return True
         except Exception as e:
             rospy.logerr("[ModeManager] failed to roslaunch '%s': %s", key, e)
@@ -161,17 +163,17 @@ class ModeManager:
     def _kill_process(self, key):
         """Stop a tracked process by key.
 
-        只杀进程本身（os.kill），不杀整个进程组（os.killpg），
-        因为 roslaunch 可能与其他节点共享进程组，killpg 会误杀。
+        用 killpg 杀死整个进程组，因为每个启动的进程都有独立的进程组
+        （通过 preexec_fn=os.setpgrp 创建），不会误杀其他节点。
         """
         proc = self.processes.get(key)
         if proc and proc.poll() is None:
             try:
-                os.kill(proc.pid, signal.SIGINT)
+                os.killpg(os.getpgid(proc.pid), signal.SIGINT)
                 proc.wait(timeout=5)
             except subprocess.TimeoutExpired:
                 try:
-                    os.kill(proc.pid, signal.SIGKILL)
+                    os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
                     proc.wait()
                 except ProcessLookupError:
                     pass
