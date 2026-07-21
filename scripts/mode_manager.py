@@ -159,22 +159,26 @@ class ModeManager:
             return False
 
     def _kill_process(self, key):
-        """Stop a tracked process by key."""
+        """Stop a tracked process by key.
+
+        只杀进程本身（os.kill），不杀整个进程组（os.killpg），
+        因为 roslaunch 可能与其他节点共享进程组，killpg 会误杀。
+        """
         proc = self.processes.get(key)
         if proc and proc.poll() is None:
             try:
-                os.killpg(os.getpgid(proc.pid), signal.SIGINT)
+                os.kill(proc.pid, signal.SIGINT)
                 proc.wait(timeout=5)
             except subprocess.TimeoutExpired:
                 try:
-                    os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
+                    os.kill(proc.pid, signal.SIGKILL)
                     proc.wait()
                 except ProcessLookupError:
                     pass
             except ProcessLookupError:
                 pass
             self.processes.pop(key, None)
-            rospy.loginfo("[ModeManager] killed '%s'", key)
+            rospy.loginfo("[ModeManager] killed '%s' (pid=%d)", key, proc.pid)
             return True
         self.processes.pop(key, None)
         return False
