@@ -120,8 +120,7 @@ class ModeManager:
             proc = subprocess.Popen(
                 cmd, env=env,
                 stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-                start_new_session=True,
-                preexec_fn=os.setpgrp)
+                start_new_session=True)
             self.processes[key] = proc
             time.sleep(0.3)
             if proc.poll() is not None:
@@ -146,8 +145,7 @@ class ModeManager:
             proc = subprocess.Popen(
                 cmd, env=env,
                 stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-                start_new_session=True,
-                preexec_fn=os.setpgrp)
+                start_new_session=True)
             self.processes[key] = proc
             time.sleep(1.0)
             if proc.poll() is not None:
@@ -163,17 +161,23 @@ class ModeManager:
     def _kill_process(self, key):
         """Stop a tracked process by key.
 
-        用 killpg 杀死整个进程组，因为每个启动的进程都有独立的进程组
-        （通过 preexec_fn=os.setpgrp 创建），不会误杀其他节点。
+        先杀进程本身，再递归杀子进程，确保 script 包装的 roslaunch 也能被关闭。
         """
         proc = self.processes.get(key)
         if proc and proc.poll() is None:
             try:
-                os.killpg(os.getpgid(proc.pid), signal.SIGINT)
+                # 先杀子进程（pkill -P），再杀父进程
+                subprocess.run(
+                    ["pkill", "-P", str(proc.pid)],
+                    capture_output=True, timeout=3)
+                os.kill(proc.pid, signal.SIGINT)
                 proc.wait(timeout=5)
             except subprocess.TimeoutExpired:
                 try:
-                    os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
+                    os.kill(proc.pid, signal.SIGKILL)
+                    subprocess.run(
+                        ["pkill", "-9", "-P", str(proc.pid)],
+                        capture_output=True, timeout=3)
                     proc.wait()
                 except ProcessLookupError:
                     pass
