@@ -564,7 +564,13 @@ class ModeManager:
 
     def _handle_settings_get(self, payload):
         """
-        读取当前 HTTP 配置参数，返回 JSON 字符串。
+        读取当前 HTTP 配置参数，返回紧凑格式字符串。
+        格式：a=val|b=val|c=val|d=val|e=val|f=val|g=val
+        单字符 key 映射：
+          a=server_ip, b=server_port, c=remote_controller_ip,
+          d=remote_controller_port, e=ftp_server_ip, f=ftp_server_port,
+          g=local_port
+        （紧凑格式为了控制帧长度在 PSDK MTU 限制内）
         """
         config = {}
         try:
@@ -572,19 +578,22 @@ class ModeManager:
             if os.path.exists(HTTP_CLIENT_YAML):
                 with open(HTTP_CLIENT_YAML, "r") as f:
                     client_cfg = yaml.safe_load(f) or {}
-                config["server_ip"] = client_cfg.get("server_ip", "")
-                config["server_port"] = client_cfg.get("server_port", "")
-                config["remote_controller_ip"] = client_cfg.get("remote_controller_ip", "")
-                config["remote_controller_port"] = client_cfg.get("remote_controller_port", "")
-                config["ftp_server_ip"] = client_cfg.get("ftp_server_ip", "")
-                config["ftp_server_port"] = client_cfg.get("ftp_server_port", "")
+                config["a"] = client_cfg.get("server_ip", "")
+                config["b"] = str(client_cfg.get("server_port", ""))
+                config["c"] = client_cfg.get("remote_controller_ip", "")
+                config["d"] = str(client_cfg.get("remote_controller_port", ""))
+                config["e"] = client_cfg.get("ftp_server_ip", "")
+                config["f"] = str(client_cfg.get("ftp_server_port", ""))
 
             if os.path.exists(HTTP_SERVER_YAML):
                 with open(HTTP_SERVER_YAML, "r") as f:
                     server_cfg = yaml.safe_load(f) or {}
-                config["local_port"] = server_cfg.get("local_port", "")
+                config["g"] = str(server_cfg.get("local_port", ""))
 
-            return True, json.dumps(config)
+            parts = [f"{k}={v}" for k, v in config.items()]
+            result = "|".join(parts)
+            rospy.loginfo("[ModeManager] settings_get result: %s", result)
+            return True, result
         except Exception as e:
             rospy.logerr("[ModeManager] settings_get error: %s", e)
             return False, f"读取配置失败: {e}"
