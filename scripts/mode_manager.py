@@ -127,7 +127,7 @@ class ModeManager:
                 rospy.logerr("[ModeManager] '%s' exited immediately (rc=%d)", key, proc.returncode)
                 self.processes.pop(key, None)
                 return False
-            rospy.loginfo("[ModeManager] '%s' started (pid=%d, pgid=%d)", key, proc.pid, os.getpgid(proc.pid))
+            rospy.loginfo("[ModeManager] '%s' started (pid=%d)", key, proc.pid)
             return True
         except Exception as e:
             rospy.logerr("[ModeManager] failed to start '%s': %s", key, e)
@@ -152,39 +152,29 @@ class ModeManager:
                 rospy.logerr("[ModeManager] roslaunch '%s' exited immediately (rc=%d)", key, proc.returncode)
                 self.processes.pop(key, None)
                 return False
-            rospy.loginfo("[ModeManager] roslaunch '%s' started (pid=%d, pgid=%d)", key, proc.pid, os.getpgid(proc.pid))
+            rospy.loginfo("[ModeManager] roslaunch '%s' started (pid=%d)", key, proc.pid)
             return True
         except Exception as e:
             rospy.logerr("[ModeManager] failed to roslaunch '%s': %s", key, e)
             return False
 
     def _kill_process(self, key):
-        """Stop a tracked process by key.
-
-        先杀进程本身，再递归杀子进程，确保 script 包装的 roslaunch 也能被关闭。
-        """
+        """Stop a tracked process by key."""
         proc = self.processes.get(key)
         if proc and proc.poll() is None:
             try:
-                # 先杀子进程（pkill -P），再杀父进程
-                subprocess.run(
-                    ["pkill", "-P", str(proc.pid)],
-                    capture_output=True, timeout=3)
-                os.kill(proc.pid, signal.SIGINT)
+                os.killpg(os.getpgid(proc.pid), signal.SIGINT)
                 proc.wait(timeout=5)
             except subprocess.TimeoutExpired:
                 try:
-                    os.kill(proc.pid, signal.SIGKILL)
-                    subprocess.run(
-                        ["pkill", "-9", "-P", str(proc.pid)],
-                        capture_output=True, timeout=3)
+                    os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
                     proc.wait()
                 except ProcessLookupError:
                     pass
             except ProcessLookupError:
                 pass
             self.processes.pop(key, None)
-            rospy.loginfo("[ModeManager] killed '%s' (pid=%d)", key, proc.pid)
+            rospy.loginfo("[ModeManager] killed '%s'", key)
             return True
         self.processes.pop(key, None)
         return False
@@ -570,13 +560,7 @@ class ModeManager:
 
     def _handle_settings_get(self, payload):
         """
-        读取当前 HTTP 配置参数，返回紧凑格式字符串。
-        格式：a=val|b=val|c=val|d=val|e=val|f=val|g=val
-        单字符 key 映射：
-          a=server_ip, b=server_port, c=remote_controller_ip,
-          d=remote_controller_port, e=ftp_server_ip, f=ftp_server_port,
-          g=local_port
-        （紧凑格式为了控制帧长度在 PSDK MTU 限制内）
+        读取当前 HTTP 配置参数，返回 JSON 字符串。
         """
         config = {}
         try:
@@ -584,22 +568,19 @@ class ModeManager:
             if os.path.exists(HTTP_CLIENT_YAML):
                 with open(HTTP_CLIENT_YAML, "r") as f:
                     client_cfg = yaml.safe_load(f) or {}
-                config["a"] = client_cfg.get("server_ip", "")
-                config["b"] = str(client_cfg.get("server_port", ""))
-                config["c"] = client_cfg.get("remote_controller_ip", "")
-                config["d"] = str(client_cfg.get("remote_controller_port", ""))
-                config["e"] = client_cfg.get("ftp_server_ip", "")
-                config["f"] = str(client_cfg.get("ftp_server_port", ""))
+                config["server_ip"] = client_cfg.get("server_ip", "")
+                config["server_port"] = client_cfg.get("server_port", "")
+                config["remote_controller_ip"] = client_cfg.get("remote_controller_ip", "")
+                config["remote_controller_port"] = client_cfg.get("remote_controller_port", "")
+                config["ftp_server_ip"] = client_cfg.get("ftp_server_ip", "")
+                config["ftp_server_port"] = client_cfg.get("ftp_server_port", "")
 
             if os.path.exists(HTTP_SERVER_YAML):
                 with open(HTTP_SERVER_YAML, "r") as f:
                     server_cfg = yaml.safe_load(f) or {}
-                config["g"] = str(server_cfg.get("local_port", ""))
+                config["local_port"] = server_cfg.get("local_port", "")
 
-            parts = [f"{k}={v}" for k, v in config.items()]
-            result = "|".join(parts)
-            rospy.loginfo("[ModeManager] settings_get result: %s", result)
-            return True, result
+            return True, json.dumps(config)
         except Exception as e:
             rospy.logerr("[ModeManager] settings_get error: %s", e)
             return False, f"读取配置失败: {e}"
