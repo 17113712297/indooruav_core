@@ -22,7 +22,7 @@ echo "  FAST-LIO2 Mapping 启动"
 echo "  日志文件: $LOG_FILE"
 echo "=============================================="
 
-script -q -c "roslaunch fastlio mapping.launch" "$LOG_FILE"
+script -q -c "roslaunch indooruav_localize mapping.launch" "$LOG_FILE"
 
 sed -i -E \
     -e 's/\x1b\[[0-9;]*[a-zA-Z]//g' \
