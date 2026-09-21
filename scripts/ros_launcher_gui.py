@@ -22,11 +22,11 @@ from std_msgs.msg import String
 
 WORKSPACE = os.path.expanduser("~/Project/IndoorUavInspection2/catkin_ws")
 THREE_D_WORKSPACE = os.path.expanduser("~/Project/3D/catkin_ws")
-SHELL_DIR = os.path.join(WORKSPACE, "src", "shell")
+SHELL_DIR = os.path.join(WORKSPACE, "src", "indooruav_core", "shell")
 SETUP_BASH = os.path.join(WORKSPACE, "devel", "setup.bash")
 THREE_D_SETUP_BASH = os.path.join(THREE_D_WORKSPACE, "devel", "setup.bash")
 
-MAP_DIR = os.path.join(WORKSPACE, "src", "FASTLIO2_SAM_LC", "map3d")
+MAP_DIR = os.path.join(WORKSPACE, "src", "indooruav_localize", "map3d")
 VEL_TOPIC = "indooruav_controller/waypoint_tracker/cmd_vel"
 VEL_RATE_HZ = 10.0
 VEL_STEP = 0.1  # m/s per click
@@ -55,7 +55,7 @@ COMMANDS = {
         {"label": "实物控制测试", "cmd": ["bash", os.path.join(SHELL_DIR, "test_controller_hardware.sh")],         "stdin": True},
         {"label": "航点记录按钮", "cmd": ["bash", os.path.join(SHELL_DIR, "waypoint_record_button.sh")]},
         {"label": "里程计记录",   "cmd": ["python", os.path.join(WORKSPACE, "src", "indooruav_core", "scripts", "odometry_recorder.py")]},
-        {"label": "像素坐标发布", "cmd": ["python3", "-u", os.path.join(WORKSPACE, "src", "FASTLIO2_SAM_LC", "scripts", "odometry_to_pixel.py")]},
+        {"label": "像素坐标发布", "cmd": ["python3", "-u", os.path.join(WORKSPACE, "src", "indooruav_localize", "scripts", "odometry_to_pixel.py")]},
         {"label": "记录雷达数据", "cmd": ["rosbag", "record", "/livox/lidar", "/livox/imu"]},
     ],
     "Services": [
@@ -607,7 +607,7 @@ class RosLauncher:
         if not selected:
             self._log("[WARN] 未选择地图！", label="System")
             return
-        yaml_path = os.path.join(WORKSPACE, "src", "FASTLIO2_SAM_LC", "config", "localize.yaml")
+        yaml_path = os.path.join(WORKSPACE, "src", "indooruav_localize", "config", "localize.yaml")
         try:
             with open(yaml_path, "r") as f:
                 content = f.read()
@@ -801,7 +801,7 @@ class RosLauncher:
         def worker():
             try:
                 env = self._get_env()
-                script = os.path.join(WORKSPACE, "src", "FASTLIO2_SAM_LC", "scripts", "pcd_to_2d.py")
+                script = os.path.join(WORKSPACE, "src", "indooruav_localize", "scripts", "pcd_to_2d.py")
                 proc = subprocess.Popen(
                     ["python3", "-u", script],
                     env=env,
@@ -840,7 +840,7 @@ class RosLauncher:
         def worker():
             try:
                 env = self._get_env()
-                script = os.path.join(WORKSPACE, "src", "FASTLIO2_SAM_LC", "scripts",
+                script = os.path.join(WORKSPACE, "src", "indooruav_localize", "scripts",
                                       "odometry_to_pixel_offline.py")
                 proc = subprocess.Popen(
                     ["python3", "-u", script],
