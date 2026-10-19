@@ -27,7 +27,7 @@ ExecStart=/bin/bash -c '\
   echo "888888" | sudo -S chmod 666 /dev/i2c-7 2>/dev/null; \
   echo "888888" | sudo -S chmod 777 /dev/ttyTHS0 2>/dev/null; \
   echo "--- Starting controller_hardware ..."; \
-  bash /home/indooruav/Project/IndoorUavInspection2/catkin_ws/src/shell/bringup_controller_hardware.sh & \
+  bash /home/indooruav/Project/IndoorUavInspection2/catkin_ws/src/indooruav_core/shell/bringup_controller_hardware.sh & \
   echo "--- Starting mode_manager roslaunch ..."; \
   roslaunch --screen indooruav_core bringup_mode_manager.launch & \
   echo "--- Starting HTTP roslaunch ..."; \

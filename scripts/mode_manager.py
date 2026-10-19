@@ -41,7 +41,7 @@ except Exception:
     WORKSPACE = _WS_FALLBACK
 
 THREE_D_WORKSPACE = os.path.expanduser("~/Project/3D/catkin_ws")
-SHELL_DIR = os.path.join(WORKSPACE, "src", "shell")
+SHELL_DIR = os.path.join(WORKSPACE, "src", "indooruav_core" , "shell")
 SETUP_BASH = os.path.join(WORKSPACE, "devel", "setup.bash")
 THREE_D_SETUP_BASH = os.path.join(THREE_D_WORKSPACE, "devel", "setup.bash")
 
