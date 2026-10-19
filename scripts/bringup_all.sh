@@ -30,7 +30,7 @@ set -eo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 WS_SRC="$(cd "$SCRIPT_DIR/.." && pwd)"                     # indooruav_core
 WORKSPACE="$(cd "$WS_SRC/../.." && pwd)"                    # catkin_ws
-SHELL_DIR="$WORKSPACE/src/shell"
+SHELL_DIR="$WORKSPACE/src/indooruav_core/shell"
 THREE_D_WORKSPACE="$(cd "$WORKSPACE/../3D/catkin_ws" 2>/dev/null && pwd || true)"
 
 # fallback：如果 3D 工作空间不在标准位置，尝试用户目录
@@ -57,7 +57,7 @@ COMPONENTS=(
     "HTTP服务@@@roslaunch --screen indooruav_http bringup_indooruav_http.launch@@@"
     "降落@@@roslaunch --screen indooruav_mission bringup_mission.launch@@@"
     "航线跟踪@@@bash ${SHELL_DIR}/bringup_waypoint_tracker.sh@@@"
-    "像素坐标发送@@@python3 -u ${WORKSPACE}/src/FASTLIO2_SAM_LC/scripts/odometry_to_pixel.py@@@"
+    "像素坐标发送@@@python3 -u ${WORKSPACE}/src/indooruav_localize/scripts/odometry_to_pixel.py@@@"
 )
 
 # ========== 源码 ROS 环境 ==========

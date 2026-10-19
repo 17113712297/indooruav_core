@@ -19,7 +19,7 @@ _OrderedDumper.add_representer(dict, _dict_representer)
 
 OUTPUT_DIR = os.path.join(
     os.path.expanduser("~"),
-    "Project/IndoorUavInspection2/catkin_ws/src/FASTLIO2_SAM_LC/log"
+    "Project/IndoorUavInspection2/catkin_ws/src/indooruav_localize/log"
 )
 
 

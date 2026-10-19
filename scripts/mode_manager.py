@@ -45,9 +45,9 @@ SHELL_DIR = os.path.join(WORKSPACE, "src", "shell")
 SETUP_BASH = os.path.join(WORKSPACE, "devel", "setup.bash")
 THREE_D_SETUP_BASH = os.path.join(THREE_D_WORKSPACE, "devel", "setup.bash")
 
-MAP_DIR = os.path.join(WORKSPACE, "src", "FASTLIO2_SAM_LC", "map3d")
+MAP_DIR = os.path.join(WORKSPACE, "src", "indooruav_localize", "map3d")
 WAYPOINT_DIR = os.path.join(WORKSPACE, "src", "indooruav_waypoint", "waypoints")
-LOCALIZE_YAML = os.path.join(WORKSPACE, "src", "FASTLIO2_SAM_LC", "config", "localize.yaml")
+LOCALIZE_YAML = os.path.join(WORKSPACE, "src", "indooruav_localize", "config", "localize.yaml")
 WAYPOINT_YAML = os.path.join(WORKSPACE, "src", "indooruav_waypoint", "config", "config.yaml")
 GIMBAL_ANGLE_YAML = os.path.join(WORKSPACE, "src", "indooruav_core", "config", "gimbal_angle_after_takeoff.yaml")
 
@@ -350,7 +350,7 @@ class ModeManager:
 
     def _handle_collect_gen_2d(self, payload):
         """Generate 2D map from PCD (pcd_to_2d.py) using current waypoints file."""
-        script = os.path.join(WORKSPACE, "src", "FASTLIO2_SAM_LC", "scripts", "pcd_to_2d.py")
+        script = os.path.join(WORKSPACE, "src", "indooruav_localize", "scripts", "pcd_to_2d.py")
         try:
             # 从 config.yaml 读取当前 waypoints 文件路径
             import yaml
@@ -378,7 +378,7 @@ class ModeManager:
 
     def _handle_collect_gen_pixel(self, payload):
         """Generate pixel coordinates (odometry_to_pixel_offline.py) from current waypoints file."""
-        script = os.path.join(WORKSPACE, "src", "FASTLIO2_SAM_LC", "scripts",
+        script = os.path.join(WORKSPACE, "src", "indooruav_localize", "scripts",
                               "odometry_to_pixel_offline.py")
         try:
             # 从 config.yaml 读取当前 waypoints 文件路径
