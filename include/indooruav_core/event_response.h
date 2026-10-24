@@ -27,6 +27,12 @@ private:
     bool HandleDataCollectionComplete(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response);
     bool HandleCheckFailed(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response);
 
+    // 人工干预事件（遥控器下发）
+    bool HandlePause(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response);
+    bool HandleResume(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response);
+    bool HandleReturn(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response);
+    bool HandleReturnComplete(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response);
+
 private:
     IndooruavStateMachine state_machine_;
     void PublishState();
@@ -40,6 +46,10 @@ private:
     std::string event_data_collection_start_service_name_;
     std::string event_data_collection_complete_service_name_;
     std::string event_check_failed_service_name_;
+    std::string event_pause_service_name_;
+    std::string event_resume_service_name_;
+    std::string event_return_service_name_;
+    std::string event_return_complete_service_name_;
 
     ros::NodeHandle nh_;
     ros::Publisher state_pub_;
@@ -52,6 +62,10 @@ private:
     ros::ServiceServer event_data_collection_start_server_;
     ros::ServiceServer event_data_collection_complete_server_;
     ros::ServiceServer event_check_failed_server_;
+    ros::ServiceServer event_pause_server_;
+    ros::ServiceServer event_resume_server_;
+    ros::ServiceServer event_return_server_;
+    ros::ServiceServer event_return_complete_server_;
 };
 
 

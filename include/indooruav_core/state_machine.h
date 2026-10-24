@@ -13,6 +13,8 @@ enum class State {
     TakeOff,                // 起飞状态
     Cruise,                 // 巡航状态
     DataCollection,         // 数据采集状态
+    Paused,                 // 暂停状态（悬停，保留航点索引与方向）
+    Return,                 // 返航状态（反方向追踪航点回到第一个航点）
     Land,                   // 降落状态
     Charge                  // 充电状态
 };
@@ -24,6 +26,8 @@ inline std::string ToString(State state) {
         case State::TakeOff:                return "TakeOff";
         case State::Cruise:                 return "Cruise";
         case State::DataCollection:         return "DataCollection";
+        case State::Paused:                 return "Paused";
+        case State::Return:                 return "Return";
         case State::Land:                   return "Land";
         case State::Charge:                 return "Charge";
         default:                            return "Unknown";
@@ -41,6 +45,10 @@ inline std::string ToString(Event event) {
         case Event::DataCollectionStart:    return "DataCollectionStart";
         case Event::DataCollectionComplete: return "DataCollectionComplete";
         case Event::CheckFailed:            return "CheckFailed";
+        case Event::PauseCommand:           return "PauseCommand";
+        case Event::ResumeCommand:          return "ResumeCommand";
+        case Event::ReturnCommand:          return "ReturnCommand";
+        case Event::ReturnComplete:         return "ReturnComplete";
         default:                            return "Unknown";
     }
 }
@@ -62,6 +70,8 @@ private:
     void Handle_TakeOff(Event event);
     void Handle_Cruise(Event event);
     void Handle_DataCollection(Event event);
+    void Handle_Paused(Event event);
+    void Handle_Return(Event event);
     void Handle_Land(Event event);
     void Handle_Charge(Event event);
 
@@ -70,6 +80,9 @@ private:
     void Action_TakeOff();
     void Action_Cruise();
     void Action_DataCollection();
+    void Action_Paused();
+    void Action_Resume();
+    void Action_Return();
     void Action_Land();
     void Action_Charge();
     void Action_NotifyHttpPostLandWorkflow();

@@ -10,7 +10,13 @@ enum class Event : int {
     LandComplete,           // 降落完成事件
     ChargeComplete,         // 充电完成事件
     DataCollectionStart,    // 数据采集开始事件
-    DataCollectionComplete  // 数据采集完成事件
+    DataCollectionComplete, // 数据采集完成事件
+
+    // ── 人工干预事件（遥控器下发） ─────────────────────────
+    PauseCommand,           // 暂停：Cruise → Paused，无人机悬停并保留航点索引
+    ResumeCommand,          // 继续：Paused → Cruise，从未完成的航点继续
+    ReturnCommand,          // 返航：Paused → Return，反方向追踪航点回到第一个航点
+    ReturnComplete          // 返航完成：Return → Land
 };
 
 #endif // EVENT_H

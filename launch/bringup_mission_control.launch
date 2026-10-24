@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<launch>
+  <!--
+    mission_control_node：遥控器人工干预（暂停 / 继续 / 返航）的 ROS 侧入口。
+
+    遥控器/MSDK 侧只需向 /mission/command 发一条 std_msgs/String：
+        pause / resume / return / status
+
+    手动调试：
+        rostopic pub -1 /mission/command std_msgs/String "data: 'pause'"
+        rostopic echo /mission/command_result
+        rostopic echo /indooruav_core/state_machine/state
+        rostopic echo /indooruav_controller/waypoint_tracker/status
+  -->
+  <node pkg="indooruav_core"
+        type="mission_control_node.py"
+        name="mission_control_node"
+        output="screen"
+        respawn="true" />
+</launch>

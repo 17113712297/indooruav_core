@@ -45,6 +45,15 @@ void ActionRequester::LoadParameters() {
     nh_.param<std::string>("/indooruav_core/action/notify_waypoint_tracker_disable",
                            action_notify_waypoint_tracker_disable_service_name_,
                            "indooruav_controller/waypoint_tracker/stop");
+    nh_.param<std::string>("/indooruav_core/action/pause_waypoint_tracker",
+                           action_pause_waypoint_tracker_service_name_,
+                           "indooruav_controller/waypoint_tracker/pause");
+    nh_.param<std::string>("/indooruav_core/action/resume_waypoint_tracker",
+                           action_resume_waypoint_tracker_service_name_,
+                           "indooruav_controller/waypoint_tracker/start");
+    nh_.param<std::string>("/indooruav_core/action/return_waypoint_tracker",
+                           action_return_waypoint_tracker_service_name_,
+                           "indooruav_controller/waypoint_tracker/return");
     nh_.param<std::string>("/indooruav_core/action/notify_uav_open_light",
                            action_notify_uav_open_light_service_name_,
                            "indooruav_controller/controller_hardware/light_open");
@@ -98,6 +107,12 @@ void ActionRequester::InitializeClients() {
         nh_.serviceClient<std_srvs::Empty>(action_notify_http_post_land_workflow_service_name_);
     action_notify_waypoint_tracker_disable_client_ =
         nh_.serviceClient<std_srvs::Empty>(action_notify_waypoint_tracker_disable_service_name_);
+    action_pause_waypoint_tracker_client_ =
+        nh_.serviceClient<std_srvs::Empty>(action_pause_waypoint_tracker_service_name_);
+    action_resume_waypoint_tracker_client_ =
+        nh_.serviceClient<std_srvs::Empty>(action_resume_waypoint_tracker_service_name_);
+    action_return_waypoint_tracker_client_ =
+        nh_.serviceClient<std_srvs::Empty>(action_return_waypoint_tracker_service_name_);
     action_notify_uav_open_light_client_ =
         nh_.serviceClient<std_srvs::Empty>(action_notify_uav_open_light_service_name_);
     action_notify_uav_close_light_client_ =
@@ -150,6 +165,21 @@ bool ActionRequester::Call_Action_NotifyHttpPostLandWorkflow() {
 bool ActionRequester::Call_Action_NotifyWaypointTrackerDisable()
 {
     return CallActionService(action_notify_waypoint_tracker_disable_client_, action_notify_waypoint_tracker_disable_service_name_);
+}
+
+bool ActionRequester::Call_Action_PauseWaypointTracker()
+{
+    return CallActionService(action_pause_waypoint_tracker_client_, action_pause_waypoint_tracker_service_name_);
+}
+
+bool ActionRequester::Call_Action_ResumeWaypointTracker()
+{
+    return CallActionService(action_resume_waypoint_tracker_client_, action_resume_waypoint_tracker_service_name_);
+}
+
+bool ActionRequester::Call_Action_ReturnWaypointTracker()
+{
+    return CallActionService(action_return_waypoint_tracker_client_, action_return_waypoint_tracker_service_name_);
 }
 
 bool ActionRequester::Call_Action_NotifyUavOpenLight()

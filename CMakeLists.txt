@@ -175,6 +175,7 @@ target_link_libraries(test_state_machine
 catkin_install_python(PROGRAMS
   scripts/ros_launcher_gui.py
   scripts/mode_manager.py
+  scripts/mission_control_node.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 

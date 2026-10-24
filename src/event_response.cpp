@@ -40,6 +40,18 @@ void EventResponder::LoadParameters() {
     nh_.param<std::string>("/indooruav_core/state_machine_event/check_failed",
                            event_check_failed_service_name_,
                            "indooruav_core/state_machine_event/check_failed");
+    nh_.param<std::string>("/indooruav_core/state_machine_event/pause",
+                           event_pause_service_name_,
+                           "indooruav_core/state_machine_event/pause");
+    nh_.param<std::string>("/indooruav_core/state_machine_event/resume",
+                           event_resume_service_name_,
+                           "indooruav_core/state_machine_event/resume");
+    nh_.param<std::string>("/indooruav_core/state_machine_event/return",
+                           event_return_service_name_,
+                           "indooruav_core/state_machine_event/return");
+    nh_.param<std::string>("/indooruav_core/state_machine_event/return_complete",
+                           event_return_complete_service_name_,
+                           "indooruav_core/state_machine_event/return_complete");
 }
 
 void EventResponder::InitializeServers() {
@@ -81,6 +93,22 @@ void EventResponder::InitializeServers() {
     event_check_failed_server_ =
         nh_.advertiseService(event_check_failed_service_name_,
                              &EventResponder::HandleCheckFailed,
+                             this);
+    event_pause_server_ =
+        nh_.advertiseService(event_pause_service_name_,
+                             &EventResponder::HandlePause,
+                             this);
+    event_resume_server_ =
+        nh_.advertiseService(event_resume_service_name_,
+                             &EventResponder::HandleResume,
+                             this);
+    event_return_server_ =
+        nh_.advertiseService(event_return_service_name_,
+                             &EventResponder::HandleReturn,
+                             this);
+    event_return_complete_server_ =
+        nh_.advertiseService(event_return_complete_service_name_,
+                             &EventResponder::HandleReturnComplete,
                              this);
 }
 
@@ -169,6 +197,42 @@ bool EventResponder::HandleCheckFailed(std_srvs::Empty::Request& request,
     (void)request;
     (void)response;
     state_machine_.HandleEvent(Event::CheckFailed);
+    PublishState();
+    return true;
+}
+
+bool EventResponder::HandlePause(std_srvs::Empty::Request& request,
+                                 std_srvs::Empty::Response& response) {
+    (void)request;
+    (void)response;
+    state_machine_.HandleEvent(Event::PauseCommand);
+    PublishState();
+    return true;
+}
+
+bool EventResponder::HandleResume(std_srvs::Empty::Request& request,
+                                  std_srvs::Empty::Response& response) {
+    (void)request;
+    (void)response;
+    state_machine_.HandleEvent(Event::ResumeCommand);
+    PublishState();
+    return true;
+}
+
+bool EventResponder::HandleReturn(std_srvs::Empty::Request& request,
+                                  std_srvs::Empty::Response& response) {
+    (void)request;
+    (void)response;
+    state_machine_.HandleEvent(Event::ReturnCommand);
+    PublishState();
+    return true;
+}
+
+bool EventResponder::HandleReturnComplete(std_srvs::Empty::Request& request,
+                                          std_srvs::Empty::Response& response) {
+    (void)request;
+    (void)response;
+    state_machine_.HandleEvent(Event::ReturnComplete);
     PublishState();
     return true;
 }

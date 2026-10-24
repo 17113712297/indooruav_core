@@ -21,6 +21,11 @@ public:
     bool Call_Action_DataCollection();
     bool Call_Action_NotifyHttpPostLandWorkflow();
 
+    // 人工干预：暂停 / 继续 / 返航（都转发给 waypoint_tracker）
+    bool Call_Action_PauseWaypointTracker();
+    bool Call_Action_ResumeWaypointTracker();
+    bool Call_Action_ReturnWaypointTracker();
+
     // 从cruise切走时会调用Disable
     bool Call_Action_NotifyWaypointTrackerDisable();
     
@@ -59,6 +64,9 @@ private:
     std::string action_data_collection_service_name_;
     std::string action_notify_http_post_land_workflow_service_name_;
     std::string action_notify_waypoint_tracker_disable_service_name_;
+    std::string action_pause_waypoint_tracker_service_name_;
+    std::string action_resume_waypoint_tracker_service_name_;
+    std::string action_return_waypoint_tracker_service_name_;
     std::string action_notify_uav_open_light_service_name_;
     std::string action_notify_uav_close_light_service_name_;
     std::string action_notify_uav_video_recording_start_service_name_;
@@ -78,6 +86,9 @@ private:
     ros::ServiceClient action_data_collection_client_;  
     ros::ServiceClient action_notify_http_post_land_workflow_client_;
     ros::ServiceClient action_notify_waypoint_tracker_disable_client_;
+    ros::ServiceClient action_pause_waypoint_tracker_client_;
+    ros::ServiceClient action_resume_waypoint_tracker_client_;
+    ros::ServiceClient action_return_waypoint_tracker_client_;
     ros::ServiceClient action_notify_uav_open_light_client_;
     ros::ServiceClient action_notify_uav_close_light_client_;
     ros::ServiceClient action_notify_uav_video_recording_start_client_;

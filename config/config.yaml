@@ -12,6 +12,11 @@ indooruav_core:
     data_collection_start: "indooruav_core/state_machine_event/data_collection_start"
     data_collection_complete: "indooruav_core/state_machine_event/data_collection_complete"
     check_failed: "indooruav_core/state_machine_event/check_failed"
+    # 人工干预（遥控器下发）：暂停 / 继续 / 返航 / 返航完成
+    pause: "indooruav_core/state_machine_event/pause"
+    resume: "indooruav_core/state_machine_event/resume"
+    return: "indooruav_core/state_machine_event/return"
+    return_complete: "indooruav_core/state_machine_event/return_complete"
   
   # 状态机的ros client会向这些service请求，让下游执行相应动作
   # 这些service也全部是 #include <std_srvs/Empty.h> 类型的service
@@ -28,6 +33,12 @@ indooruav_core:
     notify_http_post_land_workflow: "indooruav_http/run_post_land_workflow"
 
     notify_waypoint_tracker_disable: "indooruav_controller/waypoint_tracker/stop"
+
+    # 人工干预：暂停 / 继续 / 返航
+    # 注意 resume 复用 tracker 的 start 服务（tracker 内部从 PAUSED 恢复会保留航点索引）
+    pause_waypoint_tracker: "indooruav_controller/waypoint_tracker/pause"
+    resume_waypoint_tracker: "indooruav_controller/waypoint_tracker/start"
+    return_waypoint_tracker: "indooruav_controller/waypoint_tracker/return"
 
     notify_uav_open_light: "indooruav_controller/controller_hardware/light_open"
     notify_uav_close_light: "indooruav_controller/controller_hardware/light_close"
