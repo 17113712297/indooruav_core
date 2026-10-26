@@ -88,6 +88,18 @@ private:
         nh_.param<std::string>("/indooruav_core/state_machine_event/data_collection_complete",
                                data_collection_complete_service_name_,
                                "indooruav_core/state_machine_event/data_collection_complete");
+        nh_.param<std::string>("/indooruav_core/state_machine_event/pause",
+                               pause_service_name_,
+                               "indooruav_core/state_machine_event/pause");
+        nh_.param<std::string>("/indooruav_core/state_machine_event/resume",
+                               resume_service_name_,
+                               "indooruav_core/state_machine_event/resume");
+        nh_.param<std::string>("/indooruav_core/state_machine_event/return",
+                               return_service_name_,
+                               "indooruav_core/state_machine_event/return");
+        nh_.param<std::string>("/indooruav_core/state_machine_event/return_complete",
+                               return_complete_service_name_,
+                               "indooruav_core/state_machine_event/return_complete");
 
         nh_.param<std::string>("/indooruav_core/action/await",
                                action_await_service_name_,
@@ -146,6 +158,10 @@ private:
         charge_complete_client_ = nh_.serviceClient<std_srvs::Empty>(charge_complete_service_name_);
         data_collection_start_client_ = nh_.serviceClient<std_srvs::Empty>(data_collection_start_service_name_);
         data_collection_complete_client_ = nh_.serviceClient<std_srvs::Empty>(data_collection_complete_service_name_);
+        pause_client_ = nh_.serviceClient<std_srvs::Empty>(pause_service_name_);
+        resume_client_ = nh_.serviceClient<std_srvs::Empty>(resume_service_name_);
+        return_client_ = nh_.serviceClient<std_srvs::Empty>(return_service_name_);
+        return_complete_client_ = nh_.serviceClient<std_srvs::Empty>(return_complete_service_name_);
     }
 
     void InitializeActionServers() {
@@ -249,6 +265,31 @@ private:
                                     data_collection_complete_client_);
         }
 
+        // ── 人工干预事件（遥控器下发） ─────────────────────────
+        if (command == "9" || command == "pause") {
+            return CallEventService("pause",
+                                    pause_service_name_,
+                                    pause_client_);
+        }
+
+        if (command == "10" || command == "resume") {
+            return CallEventService("resume",
+                                    resume_service_name_,
+                                    resume_client_);
+        }
+
+        if (command == "11" || command == "return") {
+            return CallEventService("return",
+                                    return_service_name_,
+                                    return_client_);
+        }
+
+        if (command == "12" || command == "return_complete") {
+            return CallEventService("return_complete",
+                                    return_complete_service_name_,
+                                    return_complete_client_);
+        }
+
         return false;
     }
 
@@ -312,6 +353,10 @@ private:
                   << "  6 / charge_complete   -> trigger Event::ChargeComplete\n"
                   << "  7 / data_collection_start    -> trigger Event::DataCollectionStart\n"
                   << "  8 / data_collection_complete -> trigger Event::DataCollectionComplete\n"
+                  << "  9 / pause             -> trigger Event::PauseCommand   (Cruise -> Paused)\n"
+                  << " 10 / resume            -> trigger Event::ResumeCommand  (Paused -> Cruise)\n"
+                  << " 11 / return            -> trigger Event::ReturnCommand  (Paused -> Return)\n"
+                  << " 12 / return_complete   -> trigger Event::ReturnComplete (Return -> Land)\n"
                   << "  a / auto              -> run the full event sequence once\n"
                   << "  h / help              -> show this help\n"
                   << "  q / quit              -> exit\n"
@@ -403,6 +448,10 @@ private:
     std::string charge_complete_service_name_;
     std::string data_collection_start_service_name_;
     std::string data_collection_complete_service_name_;
+    std::string pause_service_name_;
+    std::string resume_service_name_;
+    std::string return_service_name_;
+    std::string return_complete_service_name_;
 
     std::string action_await_service_name_;
     std::string action_check_before_takeoff_service_name_;
@@ -429,6 +478,10 @@ private:
     ros::ServiceClient charge_complete_client_;
     ros::ServiceClient data_collection_start_client_;
     ros::ServiceClient data_collection_complete_client_;
+    ros::ServiceClient pause_client_;
+    ros::ServiceClient resume_client_;
+    ros::ServiceClient return_client_;
+    ros::ServiceClient return_complete_client_;
 
     ros::ServiceServer action_await_server_;
     ros::ServiceServer action_check_before_takeoff_server_;

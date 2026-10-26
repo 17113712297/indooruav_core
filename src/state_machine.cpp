@@ -102,8 +102,9 @@ void IndooruavStateMachine::Handle_Cruise(Event event)
             break;
         case Event::CruiseComplete:
             state_ = State::Land;
-            // Action_NotifyUavCloseLight();
+            
             Action_NotifyUavVideoRecordingStop();
+            Action_NotifyUavCloseLight();
             ros::Duration(0.5).sleep(); // 等待 stopRecord ACK 回来再切模式
             Action_NotifyUavSwitchPhotoMode();
             Action_Land();
@@ -120,7 +121,9 @@ void IndooruavStateMachine::Handle_DataCollection(Event event)
     switch (event) {
         case Event::DataCollectionComplete:
             state_ = State::Cruise;
+            Action_NotifyUavCloseLight(); //降落完成后，关闭补光灯
             Action_NotifyUavVideoRecordingStop(); //离开数据采集状态后，停止录像
+
             Action_Cruise();
             break;
         case Event::PauseCommand:
@@ -193,7 +196,7 @@ void IndooruavStateMachine::Handle_Land(Event event)
     switch (event) {
         case Event::LandComplete:
             state_ = State::Await;
-            Action_NotifyUavCloseLight(); //降落完成后，关闭补光灯
+            
             // 这里在“降落完成并切入 Charge”时触发前端回传流程。
             // 该流程由 http 功能包异步执行，不阻塞状态机继续执行后续动作。
             Action_NotifyHttpPostLandWorkflow();

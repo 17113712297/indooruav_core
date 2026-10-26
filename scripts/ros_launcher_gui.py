@@ -1332,6 +1332,8 @@ class RosLauncher:
             ("TakeOff", "起飞"),
             ("Cruise", "巡航"),
             ("DataCollection", "采集"),
+            ("Paused", "暂停"),
+            ("Return", "返航"),
             ("Land", "降落"),
             ("Charge", "充电"),
         ]
